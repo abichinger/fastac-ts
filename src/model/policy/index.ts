@@ -1,3 +1,3 @@
-import { Policy } from "./policy"
+import { Policy } from './policy';
 
-export { Policy }
+export { Policy };

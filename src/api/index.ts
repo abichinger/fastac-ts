@@ -1,12 +1,11 @@
-
 export interface IAddRuleBool {
-    addRule(rule :string[]): boolean
+  addRule(rule: string[]): boolean;
 }
 
 export interface IRemoveRuleBool {
-    removeRule(rule :string[]): boolean
+  removeRule(rule: string[]): boolean;
 }
 
 export interface IClear {
-    clear(): void
+  clear(): void;
 }

@@ -1,5 +1,1 @@
-
-
-export class Enforcer {
-  
-}
+export class Enforcer {}
