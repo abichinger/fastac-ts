@@ -9,6 +9,7 @@ export enum Sec {
   M = 'matchers',
 }
 
+/** @see {isModel} ts-auto-guard:type-guard */
 export interface IModel extends IAddRuleBool, IRemoveRuleBool {
   on<E extends keyof IModelEvents>(event: E, listener: IModelEvents[E]): this;
 

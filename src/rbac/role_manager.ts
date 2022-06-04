@@ -1,5 +1,6 @@
-import { IPatternMatcher } from "../util";
-import { IDefaultRoleManager } from "./rbac_api";
+import { IPatternMatcher } from '../model/static';
+import { IDefaultRoleManager } from './rbac_api';
+import { Role } from './role';
 
 export class RoleManager implements IDefaultRoleManager {
 
@@ -18,8 +19,8 @@ export class RoleManager implements IDefaultRoleManager {
     setRoleMatcher(matcher: IPatternMatcher | undefined): void {
         this.matcher = matcher
     }
-    setDomainMatcher(matcher: IPatternMatcher | undefined): void {
-        throw new Error("Method not implemented.");
+    setDomainMatcher(_matcher: IPatternMatcher | undefined): void {
+        return;
     }
 
     clear() {
@@ -28,16 +29,18 @@ export class RoleManager implements IDefaultRoleManager {
     }
 
     eachMatchingRole(pattern: string, cb: (role: Role) => void): void {
+        let matcher = (this.matcher as IPatternMatcher);
         for (let [name, role] of this.roles.entries()) {
-            if (pattern != name && (this.matcher as IPatternMatcher).match(name, pattern)) {
+            if (pattern != name && matcher.match(name, matcher.parse(pattern))) {
                 cb(role)
             }
         }
     }
 
     eachMatchingPattern(name: string, cb: (role: Role) => void): void {
+        let matcher = (this.matcher as IPatternMatcher);
         for (let pattern of this.patternRoles.values()) {
-            if (pattern != name && (this.matcher as IPatternMatcher).match(name, pattern)) {
+            if (pattern != name && matcher.match(name, matcher.parse(pattern))) {
                 let role = this.roles.get(pattern)
                 cb(role as Role)
             }
@@ -79,13 +82,13 @@ export class RoleManager implements IDefaultRoleManager {
         role.removeMatches()
     }
 
-    addLink(user: string, role: string, ...domain: string[]): boolean {
+    addLink(user: string, role: string): boolean {
         let [userR] = this.getRole(user)
         let [roleR] = this.getRole(role)
         return userR.addRole(roleR)
     }
 
-    deleteLink(user: string, role: string, ...domain: string[]): boolean {
+    deleteLink(user: string, role: string): boolean {
         let [userR] = this.getRole(user)
         let [roleR] = this.getRole(role)
         return userR.addRole(roleR)
@@ -97,8 +100,8 @@ export class RoleManager implements IDefaultRoleManager {
         }
 
         let nextRoles = new Set<Role>()
-        for (let role of this.roles.values()) {
-            if (target == role.name || this.matcher !== undefined && this.matcher.match(role.name, target)) {
+        for (let role of roles) {
+            if (target == role.name || this.matcher !== undefined && this.matcher.match(role.name, this.matcher.parse(target))) {
                 return true
             }
             role.eachRole((r) => {
@@ -109,8 +112,8 @@ export class RoleManager implements IDefaultRoleManager {
         return this.hasLinkHelper(target, nextRoles, level-1)
     }
 
-    hasLink(user: string, role: string, ...domain: string[]): boolean {
-        if (user == role || this.matcher !== undefined && this.matcher.match(user, role)) {
+    hasLink(user: string, role: string): boolean {
+        if (user == role || this.matcher !== undefined && this.matcher.match(user, this.matcher.parse(role))) {
             return true
         } 
 
@@ -127,7 +130,7 @@ export class RoleManager implements IDefaultRoleManager {
         return res
     }
 
-    getRoles(user: string, ...domain: string[]): string[] {
+    getRoles(user: string): string[] {
         let [userR, userCreated] = this.getRole(user)
         let res: string[] = []
         userR.eachRole((role) => {
@@ -139,7 +142,7 @@ export class RoleManager implements IDefaultRoleManager {
         return res
     }
 
-    getUsers(role: string, ...domain: string[]): string[] {
+    getUsers(role: string): string[] {
         let [roleR, roleCreated] = this.getRole(role)
         let res: string[] = []
         roleR.eachUser((role) => {

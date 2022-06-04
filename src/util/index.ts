@@ -1,5 +1,3 @@
-import { IPatternMatcher } from './util_api';
-
 const defaultSep = ',';
 
 export function hash(rule: string[]): string {
@@ -21,5 +19,3 @@ export function getProperty(identifier: string): string | undefined {
   }
   return identifier.substring(index + 1);
 }
-
-export { IPatternMatcher };

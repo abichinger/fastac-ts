@@ -8,7 +8,19 @@ import { buildIndex, Matcher, policyKey, reqKey } from './matcher';
 import { IModel, Sec } from './model_api';
 import { Policy } from './policy/policy';
 import { IPolicy } from './policy/policy_api';
-import { getPatternMatcher } from './static';
+import { getPatternMatcher, removeFunction, setFunction } from './static';
+
+export interface CreateProps {
+  m: IModel;
+  key: string;
+  value: string;
+}
+
+export interface DestroyProps<T> {
+  m: IModel;
+  key: string;
+  instance: T | undefined;
+}
 
 export abstract class DefHandler<T> {
   private propHandlers: Map<string, (instance: T, value: string) => void>;
@@ -20,19 +32,19 @@ export abstract class DefHandler<T> {
   }
 
   add(m: IModel, key: string, value: string) {
-    let instance = this.add(m, key, value);
+    let instance = this.create({ m, key, value });
     if (instance !== undefined) {
       this.instances.set(key, instance);
     }
   }
 
   remove(m: IModel, key: string) {
-    this.destroy(m, this.get(key));
+    this.destroy({ m, key, instance: this.get(key) });
     this.instances.delete(key);
   }
 
-  abstract create(m: IModel, key: string, value: string): T;
-  abstract destroy(m: IModel, instance: T | undefined): void;
+  abstract create(props: CreateProps): T;
+  abstract destroy(props: DestroyProps<T>): void;
 
   prop(key: string, name: string, value: string) {
     let propHandler = this.propHandlers.get(name);
@@ -82,14 +94,14 @@ function getPolicyDef(m: IModel, key?: string): ParameterDef<string> {
 }
 
 export class PolicyHandler extends DefHandler<Policy> {
-  create(m: IModel, key: string, value: string): Policy {
+  create(): Policy {
     return new Policy();
   }
-  destroy(m: IModel, instance: Policy | undefined): void {}
+  destroy(): void {}
 }
 
 export class MatcherHandler extends DefHandler<Matcher> {
-  create(m: IModel, key: string, expr: string): Matcher {
+  create({ m, value: expr }: CreateProps): Matcher {
     let exprRoot = buildIndex(expr);
     let pKey = policyKey(expr);
     let rKey = reqKey(expr);
@@ -99,8 +111,8 @@ export class MatcherHandler extends DefHandler<Matcher> {
 
     let policy: IPolicy | undefined = undefined;
     if (pKey) {
-      let policy = m.get<IPolicy>(Sec.P, pKey);
-      policy = policy ? policy : m.get<IPolicy>(Sec.R, pKey);
+      policy = m.get<IPolicy>(Sec.P, pKey);
+      policy = policy ? policy : m.get<IPolicy>(Sec.G, pKey);
       if (policy === undefined) {
         throw new Error(`policy '${pKey}' not found`);
       }
@@ -108,7 +120,7 @@ export class MatcherHandler extends DefHandler<Matcher> {
 
     return new Matcher(rDef, pDef, policy, exprRoot);
   }
-  destroy(m: IModel, matcher: Matcher | undefined): void {
+  destroy({ instance: matcher }: DestroyProps<Matcher>): void {
     if (matcher === undefined) {
       return;
     }
@@ -139,7 +151,7 @@ export class RoleManagerHandler extends DefHandler<RolePolicy> {
     });
   }
 
-  create(m: IModel, key: string, value: string): RolePolicy {
+  create({ key, value }: CreateProps): RolePolicy {
     let def = new ParameterDef<string>(key, value);
     if (def.params.length <= 1) {
       throw new Error(`expected at least 2 parameters (${key} = ${value})`);
@@ -151,26 +163,25 @@ export class RoleManagerHandler extends DefHandler<RolePolicy> {
       rm = new DomainManager(10);
     }
 
+    setFunction(key, rm.hasLink.bind(rm));
     return new RolePolicy(rm);
   }
 
-  destroy(m: IModel, instance: RolePolicy | undefined): void {}
+  destroy({ key }: DestroyProps<RolePolicy>): void {
+    removeFunction(key);
+  }
 }
 
 export class JudgeHandler extends DefHandler<JudgeFactory> {
-  create(m: IModel, key: string, value: string): JudgeFactory {
+  create({ value }: CreateProps): JudgeFactory {
     return new JudgeFactory(value);
   }
-  destroy(m: IModel, instance: JudgeFactory | undefined): void {
-    return;
-  }
+  destroy(): void {}
 }
 
 export class GenericHandler extends DefHandler<undefined> {
-  create(m: IModel, key: string, value: string): undefined {
+  create(): undefined {
     return;
   }
-  destroy(m: IModel, instance: undefined): void {
-    return;
-  }
+  destroy(): void {}
 }

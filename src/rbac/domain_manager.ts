@@ -1,6 +1,6 @@
-import { IPatternMatcher } from "../util";
-import { IDefaultRoleManager } from "./rbac_api";
-import { RoleManager } from "./role_manager";
+import { IPatternMatcher } from '../model/static';
+import { IDefaultRoleManager } from './rbac_api';
+import { RoleManager } from './role_manager';
 
 const defaultDomain = "RoleManager"
 
@@ -33,16 +33,18 @@ export class DomainManager implements IDefaultRoleManager {
     }
 
     eachMatchingRm(pattern: string, cb: (rm: IDefaultRoleManager) => void) {
+        let matcher = (this.domainMatcher as IPatternMatcher)
         for (let [domain, rm] of this.rmMap.entries()) {
-            if (pattern != domain && (this.domainMatcher as IPatternMatcher).match(domain, pattern)) {
+            if (pattern != domain && matcher.match(domain, matcher.parse(pattern))) {
                 cb(rm)
             }
         }
     }
 
     eachMatchingPattern(domain: string, cb: (rm: IDefaultRoleManager) => void) {
+        let matcher = (this.domainMatcher as IPatternMatcher)
         for (let pattern of this.patterns.values()) {
-            if (pattern != domain && (this.domainMatcher as IPatternMatcher).match(domain, pattern)) {
+            if (pattern != domain && matcher.match(domain, matcher.parse(pattern))) {
                 let rm = this.rmMap.get(pattern)
                 cb(rm as IDefaultRoleManager)
             }
@@ -90,7 +92,7 @@ export class DomainManager implements IDefaultRoleManager {
 
         if (this.domainMatcher && this.domainMatcher.isPattern(domain)) {
             this.eachMatchingRm(domain, (rm2) => {
-                rm.addLink(user, role, ...subdomains)
+                rm2.addLink(user, role, ...subdomains)
             })
         }
         return added
@@ -103,7 +105,7 @@ export class DomainManager implements IDefaultRoleManager {
 
         if (this.domainMatcher && this.domainMatcher.isPattern(domain)) {
             this.eachMatchingRm(domain, (rm2) => {
-                rm.deleteLink(user, role, ...subdomains)
+                rm2.deleteLink(user, role, ...subdomains)
             })
         }
         return deleted

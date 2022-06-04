@@ -1,0 +1,10 @@
+p,  r'dom:.+,   role:user,      /post/:id,  GET
+p,  dom:alpha,  role:user,      /post/:id,  POST
+p,  dom:beta,   role:creator,   /post/:id,  POST
+p,  r'dom:.+,   role:admin,     /*,         POST
+p,  r'dom:.+,   role:admin,     /*,         DELETE
+
+g,  user:alice,     role:admin,     dom:alpha
+g,  user:bob,       role:admin,     dom:beta
+g,  user:john,      role:creator,   r'dom:.+
+g,  r'user:.+,      role:user,      r'dom:.+

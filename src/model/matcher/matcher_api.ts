@@ -1,3 +1,7 @@
+import { ParameterDef } from '../def';
+
+/** @see {isMatcher} ts-auto-guard:type-guard */
 export interface IMatcher {
-  rangeMatches(req: any[], fn: (rule: string[]) => boolean): void;
+  eachMatch(req: any[], fn: (rule: string[]) => boolean): void;
+  getPolicyDef(): ParameterDef<string>;
 }

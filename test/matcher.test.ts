@@ -138,7 +138,7 @@ describe('rangeMatches', () => {
       let m = new Matcher(rDef, pDef, p, exprRoot);
 
       let res: string[][] = [];
-      m.rangeMatches(t.req, rule => {
+      m.eachMatch(t.req, rule => {
         res.push(rule);
         return true;
       });

@@ -4,6 +4,7 @@ import { IPolicy } from '../policy/policy_api';
 import { MatcherStage } from './def';
 import { IMatcher } from './matcher_api';
 import evaluate from 'static-eval';
+import { getFunctions } from '../static';
 
 class MatcherNode {
   rule: string[];
@@ -49,6 +50,10 @@ export class Matcher implements IMatcher {
     this.enable();
   }
 
+  getPolicyDef(): ParameterDef<string> {
+    return this.pDef;
+  }
+
   clear() {
     this.root = new MatcherNode([]);
   }
@@ -64,8 +69,8 @@ export class Matcher implements IMatcher {
       this.addRule(rule);
     }
 
-    this.policy.on('rule_added', this.addRule);
-    this.policy.on('rule_deleted', this.removeRule);
+    this.policy.on('rule_added', this.addRule.bind(this));
+    this.policy.on('rule_deleted', this.removeRule.bind(this));
     this.policy.on('cleared', this.clear);
 
     this.enabled = true;
@@ -76,8 +81,8 @@ export class Matcher implements IMatcher {
       return;
     }
 
-    this.policy.off('rule_added', this.addRule);
-    this.policy.off('rule_deleted', this.removeRule);
+    this.policy.off('rule_added', this.addRule.bind(this));
+    this.policy.off('rule_deleted', this.removeRule.bind(this));
     this.policy.off('cleared', this.clear);
 
     this.enabled = false;
@@ -93,10 +98,10 @@ export class Matcher implements IMatcher {
     node: MatcherNode
   ) {
     for (let [i, nextExpr] of exprNode.children.entries()) {
-      let pArgs = nextExpr.recursivePolicyArgs();
+      let pArgs = nextExpr.pArgs;
 
       let key: string;
-      if (pArgs.length == 0 || nextExpr.isLeafNode()) {
+      if (pArgs.length === 0 || nextExpr.isLeafNode()) {
         key = hash(rule);
       } else {
         let r = this.pDef.getArray(rule, pArgs);
@@ -122,10 +127,10 @@ export class Matcher implements IMatcher {
     node: MatcherNode
   ) {
     for (let [i, nextExpr] of exprNode.children.entries()) {
-      let pArgs = nextExpr.recursivePolicyArgs();
+      let pArgs = nextExpr.pArgs;
 
       let key: string;
-      if (pArgs.length == 0 || nextExpr.isLeafNode()) {
+      if (pArgs.length === 0 || nextExpr.isLeafNode()) {
         key = hash(rule);
       } else {
         let r = this.pDef.getArray(rule, pArgs);
@@ -143,13 +148,13 @@ export class Matcher implements IMatcher {
     }
   }
 
-  private rangeMatchingNodes(
+  private eachMatchingNode(
     exprNode: MatcherStage,
     rules: Map<string, MatcherNode>,
     vars: any,
     fn: (node: MatcherNode) => boolean
   ): boolean {
-    if (rules.size == 0) {
+    if (rules.size === 0) {
       let empty_rule = new Array(this.pDef.params.length).fill('');
       rules = new Map([['', new MatcherNode(empty_rule)]]);
     }
@@ -159,21 +164,21 @@ export class Matcher implements IMatcher {
       Object.assign(allVars, vars);
 
       let res = evaluate(exprNode.ast, allVars);
-      if (typeof res == 'boolean' && res && !fn(child)) {
+      if (typeof res === 'boolean' && res && !fn(child)) {
         return false;
       }
     }
     return true;
   }
 
-  private rangeMatchesHelper(
+  private eachMatchHelper(
     exprNode: MatcherStage,
     node: MatcherNode,
     vars: any,
     fn: (rule: string[]) => boolean
   ): boolean {
     for (let [i, nextExpr] of exprNode.children.entries()) {
-      let cont = this.rangeMatchingNodes(
+      let cont = this.eachMatchingNode(
         nextExpr,
         node.children[i],
         vars,
@@ -181,7 +186,7 @@ export class Matcher implements IMatcher {
           if (nextExpr.isLeafNode() && !fn(nextNode.rule)) {
             return false; //break
           }
-          let cont = this.rangeMatchesHelper(nextExpr, nextNode, vars, fn);
+          let cont = this.eachMatchHelper(nextExpr, nextNode, vars, fn);
           if (!cont) {
             return false;
           }
@@ -196,12 +201,13 @@ export class Matcher implements IMatcher {
   }
 
   /**
-   * rangeMatches executes a provided function for each matched rule
+   * eachMatch executes a provided function for each matched rule
    * @param vars request values and functions from FunctionMap
    * @param fn callback function
    */
-  rangeMatches(req: any[], fn: (rule: string[]) => boolean): void {
+  eachMatch(req: any[], fn: (rule: string[]) => boolean): void {
     let vars = this.rDef.toObject(req);
-    this.rangeMatchesHelper(this.exprRoot, this.root, vars, fn);
+    Object.assign(vars, getFunctions());
+    this.eachMatchHelper(this.exprRoot, this.root, vars, fn);
   }
 }

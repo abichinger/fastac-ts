@@ -1,1 +1,3 @@
-export class Enforcer {}
+import { Enforcer } from './enforcer';
+
+export { Enforcer };

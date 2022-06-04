@@ -16,10 +16,14 @@ function getEft(rule: string[], pDef: ParameterDef<string>): Effect {
 }
 
 class SomeAllow implements IJudge {
-  constructor() {}
+  pDef: ParameterDef<string>;
 
-  eval(rule: string[], pDef: ParameterDef<string>): Judgement {
-    let effect = getEft(rule, pDef);
+  constructor(pDef: ParameterDef<string>) {
+    this.pDef = pDef;
+  }
+
+  eval(rule: string[]): Judgement {
+    let effect = getEft(rule, this.pDef);
     if (effect === Effect.Allow) {
       return {
         effect: effect,
@@ -38,10 +42,14 @@ class SomeAllow implements IJudge {
 }
 
 class NoDeny implements IJudge {
-  constructor() {}
+  pDef: ParameterDef<string>;
 
-  eval(rule: string[], pDef: ParameterDef<string>): Judgement {
-    let effect = getEft(rule, pDef);
+  constructor(pDef: ParameterDef<string>) {
+    this.pDef = pDef;
+  }
+
+  eval(rule: string[]): Judgement {
+    let effect = getEft(rule, this.pDef);
     if (effect === Effect.Deny) {
       return {
         effect: effect,
@@ -64,13 +72,14 @@ export class JudgeFactory implements IJudgeFactory {
 
   constructor(judge_key: string) {
     this.judge_key = judge_key;
-    this.getJudge();
+    this.getJudge(new ParameterDef<string>('', ''));
   }
-  getJudge(): IJudge {
-    if (this.judge_key == 'some_allow') {
-      return new SomeAllow();
+
+  getJudge(pDef: ParameterDef<string>): IJudge {
+    if (this.judge_key === 'some_allow') {
+      return new SomeAllow(pDef);
     } else if (this.judge_key === 'no_deny') {
-      return new NoDeny();
+      return new NoDeny(pDef);
     } else {
       throw new Error(`unknown judge definition: ${this.judge_key}`);
     }

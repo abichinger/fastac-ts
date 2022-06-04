@@ -12,10 +12,10 @@ export interface Judgement {
 }
 
 export interface IJudgeFactory {
-  getJudge(): IJudge;
+  getJudge(pDef: ParameterDef<string>): IJudge;
 }
 
 export interface IJudge {
-  eval(rule: string[], pDef: ParameterDef<string>): Judgement;
+  eval(rule: string[]): Judgement;
   finalize(): Judgement;
 }

@@ -1,4 +1,4 @@
-class Role {
+export class Role {
   name: string;
   roles: Map<string, Role>;
   users: Map<string, Role>;

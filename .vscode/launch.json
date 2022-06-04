@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Node.js: Debug TSDX Jest Tests",
+            "name": "TSDX Jest Tests",
             "type": "node",
             "request": "launch",
             "runtimeArgs": [
@@ -16,7 +16,10 @@
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
-            "port": 9229
+            "port": 9229,
+            "env": {
+                "ENV_TYPE": "node"
+            }
         },
         {
             "type": "pwa-node",

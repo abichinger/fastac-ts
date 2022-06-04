@@ -3,23 +3,25 @@ import { Expression } from "estree"
  
 parseScript("").body[0]
 
-let pArgReg = /([pg][0-9]*)\.([A-Za-z0-9_]+)/gm
-let rArgReg = /(r[0-9]*)\.([A-Za-z0-9_]+)/gm
+let pArgReg = /([pg][0-9]*)\.([A-Za-z0-9_]+)/g
+let rArgReg = /(r[0-9]*)\.([A-Za-z0-9_]+)/g
 
 export function policyKey(expr: string): string | undefined {
-    let match = expr.match(pArgReg)
+    let match = pArgReg.exec(expr)
+    pArgReg.lastIndex = 0;
     if (match === null) {
         return undefined
     }
-    return match[1]
+    return match[1];
 }
 
 export function reqKey(expr: string): string | undefined {
-    let match = expr.match(rArgReg)
+    let match = rArgReg.exec(expr)
+    rArgReg.lastIndex = 0;
     if (match === null) {
         return undefined
     }
-    return match[1]
+    return match[1];
 }
 
 export class MatcherStage {

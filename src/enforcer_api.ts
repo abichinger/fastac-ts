@@ -1,15 +1,8 @@
-import { JudgeFactory } from './model/judge';
-import { IMatcher } from './model/matcher/matcher_api';
+import { BaseConfig, EnforceConfig } from './config';
 import { IModel } from './model/model_api';
+import { StorageOptions } from './storage/controller';
 
-interface BaseConfig {
-  req?: any[];
-  matcher?: string | IMatcher;
-}
-
-interface EnforceConfig extends BaseConfig {
-  judge?: string | JudgeFactory;
-}
+export interface EnforcerOptions extends StorageOptions {}
 
 export interface IEnforcer {
   getModel(): IModel;

@@ -10,6 +10,9 @@ import {
   RoleManagerHandler,
 } from './handlers';
 
+import ini from 'ini';
+import { IPolicy } from './policy/policy_api';
+
 class Section {
   name: string;
   defs: Map<string, string>;
@@ -35,6 +38,7 @@ class Section {
     if (property === undefined) {
       handler.add(model, key, value);
     } else {
+      key = key.substring(0, key.length - property.length - 1);
       handler.prop(key, property, value);
     }
     this.defs.set(key, value);
@@ -119,14 +123,61 @@ export class Model extends EventEmitter implements IModel {
     section.remove(this, key);
   }
 
+  getPolicy(pKey: string): IPolicy | undefined {
+    let policy = this.get<IPolicy>(Sec.P, pKey);
+    return policy ? policy : this.get<IPolicy>(Sec.G, pKey);
+  }
+
   addRule(rule: string[]): boolean {
-    throw new Error('Method not implemented.');
+    let pKey = rule[0];
+    let policy = this.getPolicy(pKey);
+    if (policy === undefined) {
+      throw new Error(`policy '${pKey}' not found`);
+    }
+    let added = policy.addRule(rule.slice(1));
+    if (added) {
+      this.emit('rule_added', rule);
+    }
+    return added;
   }
   removeRule(rule: string[]): boolean {
-    throw new Error('Method not implemented.');
+    let pKey = rule[0];
+    let policy = this.getPolicy(pKey);
+    if (policy === undefined) {
+      throw new Error(`policy '${pKey}' not found`);
+    }
+    let deleted = policy.removeRule(rule.slice(1));
+    if (deleted) {
+      this.emit('rule_deleted', rule);
+    }
+    return deleted;
   }
 
   toString(): string {
     throw new Error('Method not implemented.');
+  }
+
+  static fromFile(path: string): Model {
+    if (process.env.ENV_TYPE === 'node') {
+      const fs = require('fs');
+      let config = fs.readFileSync(path, 'utf-8');
+      return this.fromText(config);
+    } else {
+      throw new Error('fromFile can only be called from a node.js environment');
+    }
+  }
+
+  static fromText(config: string): Model {
+    let model = new Model();
+    let cfg = ini.parse(config);
+    for (let secName of Object.values(Sec)) {
+      if (cfg[secName] === undefined || typeof cfg[secName] !== 'object') {
+        continue;
+      }
+      for (let [key, value] of Object.entries(cfg[secName])) {
+        model.setDef(secName, key, value as string);
+      }
+    }
+    return model;
   }
 }

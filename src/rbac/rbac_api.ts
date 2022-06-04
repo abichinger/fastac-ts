@@ -1,4 +1,4 @@
-import { IPatternMatcher } from '../util';
+import { IPatternMatcher } from '../model/static';
 
 export interface IRoleManager {
   clear(): void;
