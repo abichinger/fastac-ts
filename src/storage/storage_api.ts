@@ -1,26 +1,20 @@
-import {
-  IAddRule,
-  IAddRuleBool,
-  IAddRules,
-  IRemoveRule,
-  IRemoveRules,
-} from '../api';
+import { IAddRuleBool } from '../api';
 
 /** @see {isStorageAdapter} ts-auto-guard:type-guard */
 export interface IStorageAdapter {
-  loadPolicy(model: IAddRuleBool): void;
-  savePolicy(model: Iterable<string[]>): void;
+  loadPolicy(model: IAddRuleBool): Promise<void>;
+  savePolicy(model: Iterable<string[]>): Promise<void>;
 }
 
-export interface ISimpleAdapter
-  extends IStorageAdapter,
-    IAddRule,
-    IRemoveRule {}
+export interface ISimpleAdapter extends IStorageAdapter {
+  addRule(rule: string[]): Promise<void>;
+  removeRule(rule: string[]): Promise<void>;
+}
 
-export interface IBatchAdapter
-  extends IStorageAdapter,
-    IAddRules,
-    IRemoveRules {}
+export interface IBatchAdapter extends IStorageAdapter {
+  addRules(rules: string[][]): Promise<void>;
+  removeRules(rules: string[][]): Promise<void>;
+}
 
 export function isSimpleAdapter(adapter: any): adapter is ISimpleAdapter {
   return (

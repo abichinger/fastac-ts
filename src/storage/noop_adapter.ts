@@ -2,16 +2,16 @@ import { IAddRuleBool } from '../api';
 import { ISimpleAdapter } from './storage_api';
 
 export class NoopAdapter implements ISimpleAdapter {
-  loadPolicy(_model: IAddRuleBool): void {
+  async loadPolicy(_model: IAddRuleBool): Promise<void> {
     return;
   }
-  savePolicy(_model: Iterable<string[]>): void {
+  async savePolicy(_model: Iterable<string[]>): Promise<void> {
     return;
   }
-  addRule(_rule: string[]): void {
+  async addRule(_rule: string[]): Promise<void> {
     return;
   }
-  removeRule(_rule: string[]): void {
+  async removeRule(_rule: string[]): Promise<void> {
     return;
   }
 }

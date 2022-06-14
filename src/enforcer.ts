@@ -30,16 +30,22 @@ export class Enforcer implements IEnforcer {
 
     if (isStorageAdapter(adapter)) {
       this.adapter = adapter;
-    } else if (typeof adapter === 'string') {
-      const { FileAdapter } = require('./storage/file_adapter');
-      this.adapter = new FileAdapter(adapter);
+    } else if (typeof adapter === 'string' && adapter.endsWith('.csv')) {
+      const { CSVAdapter } = require('./storage/csv_adapter');
+      this.adapter = new CSVAdapter(adapter);
+    } else if (typeof adapter === 'string' && adapter.endsWith('.json')) {
+      const { JSONAdapter } = require('./storage/json_adapter');
+      this.adapter = new JSONAdapter(adapter);
     } else {
       this.adapter = new NoopAdapter();
     }
-    this.adapter.loadPolicy(this.model);
 
     this.sc = new StorageController(this.model, this.adapter, options);
     //this.options = options;
+  }
+
+  loadPolicy(): Promise<void> {
+    return this.adapter.loadPolicy(this.model);
   }
 
   getModel(): IModel {

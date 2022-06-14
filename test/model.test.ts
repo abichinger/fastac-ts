@@ -1,7 +1,7 @@
 import { Enforcer } from '../src';
 import { Model } from '../src/model/model';
 import { Policy } from '../src/model/policy';
-import { FileAdapter } from '../src/storage/file_adapter';
+import { CSVAdapter } from '../src/storage/csv_adapter';
 import ini from 'ini';
 import fs from 'fs';
 
@@ -21,13 +21,14 @@ describe('test eachRule', () => {
     },
   ];
 
-  test.each(tests)('%s', ({ model, policy }) => {
+  test.each(tests)('%s', async ({ model, policy }) => {
     let e = new Enforcer(model, policy);
+    await e.loadPolicy();
     let m = e.getModel();
 
     let ruleSet = new Policy();
-    let adapter = new FileAdapter(policy);
-    adapter.loadPolicy(ruleSet);
+    let adapter = new CSVAdapter(policy);
+    await adapter.loadPolicy(ruleSet);
     let expected = Array.from(ruleSet).map(rule => rule.join(','));
 
     let actual: string[] = [];

@@ -18,15 +18,15 @@ function lineToRule(line: string): string[] {
   return line.split(sep).map(a => a.trim());
 }
 
-export class FileAdapter implements ISimpleAdapter {
+export class CSVAdapter implements ISimpleAdapter {
   private path: string;
 
   constructor(path: string) {
     this.path = path;
   }
 
-  loadPolicy(model: IAddRuleBool): void {
-    let content = fs.readFileSync(this.path, 'utf-8');
+  async loadPolicy(model: IAddRuleBool): Promise<void> {
+    let content = await fs.promises.readFile(this.path, 'utf-8');
     let lines = content.split('\n');
     for (let line of lines) {
       let rule = lineToRule(line);
@@ -37,26 +37,26 @@ export class FileAdapter implements ISimpleAdapter {
     }
   }
 
-  savePolicy(rules: Iterable<string[]>): void {
+  async savePolicy(rules: Iterable<string[]>): Promise<void> {
     let content = '';
     for (let rule of rules) {
       let line = ruleToLine(rule);
       content += line + '\n';
     }
-    fs.writeFileSync(this.path, content);
+    await fs.promises.writeFile(this.path, content);
   }
 
-  addRule(rule: string[]): void {
+  async addRule(rule: string[]): Promise<void> {
     let rules = new Policy();
-    this.loadPolicy(rules);
+    await this.loadPolicy(rules);
     rules.addRule(rule);
-    this.savePolicy(rules);
+    await this.savePolicy(rules);
   }
 
-  removeRule(rule: string[]): void {
+  async removeRule(rule: string[]): Promise<void> {
     let rules = new Policy();
-    this.loadPolicy(rules);
+    await this.loadPolicy(rules);
     rules.removeRule(rule);
-    this.savePolicy(rules);
+    await this.savePolicy(rules);
   }
 }
