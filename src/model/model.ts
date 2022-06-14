@@ -38,8 +38,8 @@ class Section {
     if (property === undefined) {
       handler.add(model, key, value);
     } else {
-      key = key.substring(0, key.length - property.length - 1);
-      handler.prop(key, property, value);
+      let parent = key.substring(0, key.length - property.length - 1);
+      handler.prop(parent, property, value);
     }
     this.defs.set(key, value);
   }
@@ -63,13 +63,21 @@ class Section {
     return (handler as DefHandler<T>).get(key);
   }
 
+  entries<T>(baseKey: string): IterableIterator<[string, T]> {
+    let handler = this.handlers.get(baseKey);
+    if (handler === undefined) {
+      return [].values();
+    }
+    return (handler as DefHandler<T>).entries();
+  }
+
   getDef(key: string): string | undefined {
     return this.defs.get(key);
   }
 }
 
 export class Model extends EventEmitter implements IModel {
-  secMap: Map<string, Section>;
+  private secMap: Map<string, Section>;
 
   constructor() {
     super();
@@ -97,6 +105,14 @@ export class Model extends EventEmitter implements IModel {
       throw new Error(`section "${sec}" not found`);
     }
     return section.get<T>(key);
+  }
+
+  entries<T>(sec: string, baseKey: string): IterableIterator<[string, T]> {
+    let section = this.secMap.get(sec);
+    if (section === undefined) {
+      throw new Error(`section "${sec}" not found`);
+    }
+    return section.entries<T>(baseKey);
   }
 
   setDef(sec: string, key: string, value: string): void {
@@ -154,7 +170,15 @@ export class Model extends EventEmitter implements IModel {
   }
 
   toString(): string {
-    throw new Error('Method not implemented.');
+    let obj: any = {};
+    for (let [secName, sec] of this.secMap.entries()) {
+      let secObj: any = {};
+      obj[secName] = secObj;
+      for (let [key, value] of sec.defs.entries()) {
+        secObj[key] = value;
+      }
+    }
+    return ini.stringify(obj, { whitespace: true });
   }
 
   static fromFile(path: string): Model {
@@ -179,5 +203,22 @@ export class Model extends EventEmitter implements IModel {
       }
     }
     return model;
+  }
+
+  eachRule(fn: (rule: string[]) => boolean): void {
+    let policies = this.entries<IPolicy>(Sec.P, 'p');
+    let rolePolicies = this.entries<IPolicy>(Sec.G, 'g');
+    let policyMap = new Map([
+      ...Array.from(policies),
+      ...Array.from(rolePolicies),
+    ]);
+    for (let [key, policy] of policyMap.entries()) {
+      for (let rule of policy) {
+        let cont = fn([key, ...rule]);
+        if (!cont) {
+          return;
+        }
+      }
+    }
   }
 }

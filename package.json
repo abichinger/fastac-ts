@@ -66,5 +66,9 @@
     "ini": "^3.0.0",
     "matchit": "^1.1.0",
     "static-eval": "^2.1.0"
+  },
+  "resolutions": {
+    "**/@typescript-eslint/eslint-plugin": "^5.15.0",
+    "**/@typescript-eslint/parser": "^5.15.0"
   }
 }

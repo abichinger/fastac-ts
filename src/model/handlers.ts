@@ -66,6 +66,10 @@ export abstract class DefHandler<T> {
     return this.instances.get(key);
   }
 
+  entries(): IterableIterator<[string, T]> {
+    return this.instances.entries();
+  }
+
   registerProp(name: string, handler: (instance: T, value: string) => void) {
     this.propHandlers.set(name, handler);
   }

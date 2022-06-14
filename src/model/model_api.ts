@@ -29,6 +29,7 @@ export interface IModel extends IAddRuleBool, IRemoveRuleBool {
 
   get<T>(sec: string, key: string): T | undefined;
 
+  eachRule(fn: (rule: string[]) => boolean): void;
   toString(): string;
 }
 
