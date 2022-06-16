@@ -1,4 +1,4 @@
-import { pathMatch, regexMatch } from './functions';
+import { pathMatch, regexMatch, evaluate } from './functions';
 import { regexMatcher } from './matchers';
 
 type Func = (...args: any[]) => any;
@@ -23,6 +23,7 @@ export function getFunctions(): FuncMap {
 
 setFunction('pathMatch', pathMatch);
 setFunction('regexMatch', regexMatch);
+setFunction('eval', evaluate);
 
 export interface IPatternMatcher {
   isPattern(str: string): boolean;

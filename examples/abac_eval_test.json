@@ -1,0 +1,13 @@
+[
+    {"req": [{"name": "alice", "age": 21}, "data1", "read"], "expected": true},
+    {"req": [{"name": "alice", "age": 21}, "data2", "read"], "expected": true},
+    {"req": [{"name": "alice", "age": 21}, "data3", "read"], "expected": false},
+
+    {"req": [{"name": "bob", "age": 10}, "data1", "read"], "expected": false},
+    {"req": [{"name": "bob", "age": 10}, "data2", "read"], "expected": false},
+    {"req": [{"name": "bob", "age": 10}, "data3", "read"], "expected": true},
+
+    {"req": [{"name": "john", "age": 16}, "data1", "read"], "expected": false},
+    {"req": [{"name": "john", "age": 16}, "data2", "read"], "expected": true},
+    {"req": [{"name": "john", "age": 16}, "data3", "read"], "expected": true}
+]

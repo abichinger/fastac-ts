@@ -1,0 +1,10 @@
+[
+    ["p", "admin", "/article/:id", "true", "GET"],
+    ["p", "premium", "/article/:id", "r.obj.age < 12", "GET"],
+    ["p", "user", "/article/:id", "r.obj.age < 1", "GET"],
+    ["g", "alice", "admin"],
+    ["g", "bob", "premium"],
+    ["g", "john", "user"],
+    ["g", "admin", "premium"],
+    ["g", "premium", "user"]
+]

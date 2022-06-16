@@ -1,0 +1,17 @@
+[
+    {"req": ["alice", "/article/1", {"id":1, "age": 0.5}, "GET"], "expected": true},
+    {"req": ["alice", "/article/2", {"id":2, "age": 7}, "GET"], "expected": true},
+    {"req": ["alice", "/article/3", {"id":3, "age": 13}, "GET"], "expected": true},
+
+    {"req": ["bob", "/article/1", {"id":1, "age": 0.5}, "GET"], "expected": true},
+    {"req": ["bob", "/article/2", {"id":2, "age": 7}, "GET"], "expected": true},
+    {"req": ["bob", "/article/3", {"id":3, "age": 13}, "GET"], "expected": false},
+
+    {"req": ["john", "/article/1", {"id":1, "age": 0.5}, "GET"], "expected": true},
+    {"req": ["john", "/article/2", {"id":2, "age": 7}, "GET"], "expected": false},
+    {"req": ["john", "/article/3", {"id":3, "age": 13}, "GET"], "expected": false},
+
+    {"req": ["lisa", "/article/1", {"id":1, "age": 0.5}, "GET"], "expected": false},
+    {"req": ["lisa", "/article/2", {"id":2, "age": 7}, "GET"], "expected": false},
+    {"req": ["lisa", "/article/3", {"id":3, "age": 13}, "GET"], "expected": false}
+]

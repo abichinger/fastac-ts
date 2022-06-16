@@ -1,0 +1,5 @@
+[
+    ["p", "sub.age > 18", "data1", "read"],
+    ["p", "sub.age > 12", "data2", "read"],
+    ["p", "sub.age < 18", "data3", "read"]
+]

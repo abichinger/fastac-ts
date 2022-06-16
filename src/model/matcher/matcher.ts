@@ -164,6 +164,13 @@ export class Matcher implements IMatcher {
       Object.assign(allVars, vars);
 
       let res = evaluate(exprNode.ast, allVars);
+      if (res === undefined) {
+        throw new Error(
+          `can't resolve ${exprNode.expr} with ${JSON.stringify(
+            Object.keys(allVars)
+          )}`
+        );
+      }
       if (typeof res === 'boolean' && res && !fn(child)) {
         return false;
       }

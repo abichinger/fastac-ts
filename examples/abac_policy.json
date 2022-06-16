@@ -1,0 +1,8 @@
+[
+    ["p", 1, "data1", "read"],
+    ["p", 2, "data2", "read"],
+    ["p", 3, "data3", "read"],
+    ["p", 2, "data1", "write"],
+    ["p", 1, "data2", "write"],
+    ["p", 3, "data3", "write"]
+]

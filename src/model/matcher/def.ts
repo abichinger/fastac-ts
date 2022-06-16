@@ -1,4 +1,4 @@
-import { parseScript } from 'esprima';
+import { parse } from '../static/functions';
 import { Expression } from 'estree';
 
 let pArgReg = /([pg][0-9]*)\.([A-Za-z0-9_]+)/g;
@@ -85,18 +85,9 @@ function buildExprTree(
   }
 }
 
-class ExpressionError extends Error {}
-
 export function buildIndex(expr: string): MatcherStage {
-  let exprBody = parseScript(expr, { range: true }).body;
-  if (exprBody.length > 1) {
-    throw new ExpressionError('more than one expression found: ' + expr);
-  }
-  let ast = exprBody[0];
-  if (ast.type !== 'ExpressionStatement') {
-    throw new ExpressionError();
-  }
+  let ast = parse(expr);
   let root = new MatcherStage({} as Expression, '');
-  buildExprTree(expr, root, ast.expression, []);
+  buildExprTree(expr, root, ast, []);
   return root;
 }

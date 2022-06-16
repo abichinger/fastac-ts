@@ -1,0 +1,16 @@
+[
+    {"req": ["alice", "data1", "read"], "expected": true},
+    {"req": ["alice", "data2", "read"], "expected": true},
+    {"req": ["alice", "data1", "write"], "expected": true},
+    {"req": ["alice", "data2", "write"], "expected": true},
+
+    {"req": ["bob", "data1", "read"], "expected": true},
+    {"req": ["bob", "data2", "read"], "expected": true},
+    {"req": ["bob", "data1", "write"], "expected": false},
+    {"req": ["bob", "data2", "write"], "expected": true},
+
+    {"req": ["john", "data1", "read"], "expected": false},
+    {"req": ["john", "data2", "read"], "expected": false},
+    {"req": ["john", "data1", "write"], "expected": false},
+    {"req": ["john", "data2", "write"], "expected": false}
+]
