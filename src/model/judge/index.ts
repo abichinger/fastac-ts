@@ -1,7 +1,7 @@
 import { ParameterDef } from '../def';
 import { Effect, IJudge, IJudgeFactory, Judgement } from './judge_api';
 
-function getEft(rule: string[], pDef: ParameterDef<string>): Effect {
+function getEft(rule: string[], pDef: ParameterDef): Effect {
   if (pDef.has('eft')) {
     let eft = pDef.get(rule, 'eft');
     if (eft === 'allow' || eft === '') {
@@ -16,9 +16,9 @@ function getEft(rule: string[], pDef: ParameterDef<string>): Effect {
 }
 
 class SomeAllow implements IJudge {
-  pDef: ParameterDef<string>;
+  pDef: ParameterDef;
 
-  constructor(pDef: ParameterDef<string>) {
+  constructor(pDef: ParameterDef) {
     this.pDef = pDef;
   }
 
@@ -42,9 +42,9 @@ class SomeAllow implements IJudge {
 }
 
 class NoDeny implements IJudge {
-  pDef: ParameterDef<string>;
+  pDef: ParameterDef;
 
-  constructor(pDef: ParameterDef<string>) {
+  constructor(pDef: ParameterDef) {
     this.pDef = pDef;
   }
 
@@ -72,10 +72,10 @@ export class JudgeFactory implements IJudgeFactory {
 
   constructor(judge_key: string) {
     this.judge_key = judge_key;
-    this.getJudge(new ParameterDef<string>('', ''));
+    this.getJudge(new ParameterDef('', ''));
   }
 
-  getJudge(pDef: ParameterDef<string>): IJudge {
+  getJudge(pDef: ParameterDef): IJudge {
     if (this.judge_key === 'some_allow') {
       return new SomeAllow(pDef);
     } else if (this.judge_key === 'no_deny') {

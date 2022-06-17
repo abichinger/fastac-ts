@@ -75,31 +75,31 @@ export abstract class DefHandler<T> {
   }
 }
 
-function getRequestDef(m: IModel, key?: string): ParameterDef<any> {
+function getRequestDef(m: IModel, key?: string): ParameterDef {
   if (key === undefined) {
-    return new ParameterDef<any>('', '');
+    return new ParameterDef('', '', 'Any');
   }
   let args = m.getDef(Sec.R, key);
   if (args === undefined) {
     throw new Error(`request definition '${key}' not found`);
   }
-  return new ParameterDef<any>(key, args);
+  return new ParameterDef(key, args, 'Any');
 }
 
-function getPolicyDef(m: IModel, key?: string): ParameterDef<string> {
+function getPolicyDef(m: IModel, key?: string): ParameterDef {
   if (key === undefined) {
-    return new ParameterDef<string>('', '');
+    return new ParameterDef('', '');
   }
   let args = m.getDef(Sec.P, key);
   if (args === undefined) {
     throw new Error(`policy definition '${key}' not found`);
   }
-  return new ParameterDef<string>(key, args);
+  return new ParameterDef(key, args);
 }
 
 export class PolicyHandler extends DefHandler<Policy> {
-  create(): Policy {
-    return new Policy();
+  create({ key, value }: CreateProps): Policy {
+    return new Policy(key, value);
   }
   destroy(): void {}
 }
@@ -156,7 +156,7 @@ export class RoleManagerHandler extends DefHandler<RolePolicy> {
   }
 
   create({ key, value }: CreateProps): RolePolicy {
-    let def = new ParameterDef<string>(key, value);
+    let def = new ParameterDef(key, value);
     if (def.params.length <= 1) {
       throw new Error(`expected at least 2 parameters (${key} = ${value})`);
     }
@@ -168,7 +168,7 @@ export class RoleManagerHandler extends DefHandler<RolePolicy> {
     }
 
     setFunction(key, rm.hasLink.bind(rm));
-    return new RolePolicy(rm);
+    return new RolePolicy(rm, key, value);
   }
 
   destroy({ key }: DestroyProps<RolePolicy>): void {

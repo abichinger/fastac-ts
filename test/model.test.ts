@@ -1,9 +1,9 @@
 import { Enforcer } from '../src';
 import { Model } from '../src/model/model';
-import { Policy } from '../src/model/policy';
 import { CSVAdapter } from '../src/storage/csv_adapter';
 import ini from 'ini';
 import fs from 'fs';
+import { RuleSet } from '../src/storage/json_adapter';
 
 describe('test eachRule', () => {
   const tests: { model: string; policy: string }[] = [
@@ -26,9 +26,9 @@ describe('test eachRule', () => {
     await e.loadPolicy();
     let m = e.getModel();
 
-    let ruleSet = new Policy();
+    let ruleSet = new RuleSet();
     let adapter = new CSVAdapter(policy);
-    await adapter.loadPolicy(ruleSet);
+    await adapter.load(ruleSet);
     let expected = Array.from(ruleSet).map(rule => rule.join(','));
 
     let actual: string[] = [];

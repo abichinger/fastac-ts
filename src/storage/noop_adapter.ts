@@ -1,11 +1,11 @@
-import { IAddRuleBool } from '../api';
-import { ISimpleAdapter } from './storage_api';
+import { IAddRawRuleBool } from '../api';
+import { ISimpleAdapter, LoadOptions } from './storage_api';
 
 export class NoopAdapter implements ISimpleAdapter {
-  async loadPolicy(_model: IAddRuleBool): Promise<void> {
+  async load(_model: IAddRawRuleBool, _options: LoadOptions): Promise<void> {
     return;
   }
-  async savePolicy(_model: Iterable<string[]>): Promise<void> {
+  async clear(): Promise<void> {
     return;
   }
   async addRule(_rule: string[]): Promise<void> {

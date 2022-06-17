@@ -31,14 +31,14 @@ class MatcherNode {
 export class Matcher implements IMatcher {
   exprRoot: MatcherStage;
   policy?: IPolicy;
-  pDef: ParameterDef<string>;
-  rDef: ParameterDef<any>;
+  pDef: ParameterDef;
+  rDef: ParameterDef;
   root: MatcherNode = new MatcherNode([]);
   enabled: boolean = false;
 
   constructor(
-    rDef: ParameterDef<any>,
-    pDef: ParameterDef<string>,
+    rDef: ParameterDef,
+    pDef: ParameterDef,
     policy: IPolicy | undefined,
     exprRoot: MatcherStage
   ) {
@@ -50,7 +50,7 @@ export class Matcher implements IMatcher {
     this.enable();
   }
 
-  getPolicyDef(): ParameterDef<string> {
+  getPolicyDef(): ParameterDef {
     return this.pDef;
   }
 
@@ -88,12 +88,12 @@ export class Matcher implements IMatcher {
     this.enabled = false;
   }
 
-  private addRule(rule: string[]) {
+  private addRule(rule: any[]) {
     this.addRuleHelper(rule, this.exprRoot, this.root);
   }
 
   private addRuleHelper(
-    rule: string[],
+    rule: any[],
     exprNode: MatcherStage,
     node: MatcherNode
   ) {
@@ -117,12 +117,12 @@ export class Matcher implements IMatcher {
     }
   }
 
-  private removeRule(rule: string[]) {
+  private removeRule(rule: any[]) {
     this.removeRuleHelper(rule, this.exprRoot, this.root);
   }
 
   private removeRuleHelper(
-    rule: string[],
+    rule: any[],
     exprNode: MatcherStage,
     node: MatcherNode
   ) {

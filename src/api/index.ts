@@ -1,25 +1,29 @@
 export interface IAddRuleBool {
-  addRule(rule: string[]): boolean;
+  addRule(rule: any[]): boolean;
+}
+
+export interface IAddRawRuleBool {
+  addRawRule(rule: string[]): boolean;
 }
 
 export interface IAddRule {
-  addRule(rule: string[]): void;
+  addRule(rule: any[]): void;
 }
 
 export interface IAddRules {
-  addRules(rules: string[][]): void;
+  addRules(rules: any[][]): void;
 }
 
 export interface IRemoveRuleBool {
-  removeRule(rule: string[]): boolean;
+  removeRule(rule: any[]): boolean;
 }
 
 export interface IRemoveRule {
-  removeRule(rule: string[]): void;
+  removeRule(rule: any[]): void;
 }
 
 export interface IRemoveRules {
-  removeRules(rules: string[][]): void;
+  removeRules(rules: any[][]): void;
 }
 
 export interface IClear {

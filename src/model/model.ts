@@ -144,7 +144,19 @@ export class Model extends EventEmitter implements IModel {
     return policy ? policy : this.get<IPolicy>(Sec.G, pKey);
   }
 
-  addRule(rule: string[]): boolean {
+  addRawRule(rule: string[]) {
+    let pKey = rule[0];
+    let policy = this.getPolicy(pKey);
+    if (policy === undefined) {
+      throw new Error(`policy '${pKey}' not found`);
+    }
+    let pDef = policy.parameters();
+    let parsed = pDef.parse(rule.slice(1));
+    parsed.unshift(pKey);
+    return this.addRule(parsed);
+  }
+
+  addRule(rule: any[]): boolean {
     let pKey = rule[0];
     let policy = this.getPolicy(pKey);
     if (policy === undefined) {
@@ -156,7 +168,7 @@ export class Model extends EventEmitter implements IModel {
     }
     return added;
   }
-  removeRule(rule: string[]): boolean {
+  removeRule(rule: any[]): boolean {
     let pKey = rule[0];
     let policy = this.getPolicy(pKey);
     if (policy === undefined) {

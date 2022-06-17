@@ -4,8 +4,8 @@ import { IRoleManager } from './rbac_api';
 export class RolePolicy extends Policy {
   rm: IRoleManager;
 
-  constructor(rm: IRoleManager) {
-    super();
+  constructor(rm: IRoleManager, key: string, parameters: string) {
+    super(key, parameters);
     this.rm = rm;
   }
 

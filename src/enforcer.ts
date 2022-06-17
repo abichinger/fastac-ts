@@ -31,11 +31,19 @@ export class Enforcer implements IEnforcer {
     if (isStorageAdapter(adapter)) {
       this.adapter = adapter;
     } else if (typeof adapter === 'string' && adapter.endsWith('.csv')) {
-      const { CSVAdapter } = require('./storage/csv_adapter');
-      this.adapter = new CSVAdapter(adapter);
+      if (process.env.ENV_TYPE === 'node') {
+        const { CSVAdapter } = require('./storage/csv_adapter');
+        this.adapter = new CSVAdapter(adapter);
+      } else {
+        throw new Error('CSVAdapter is not supported in browser');
+      }
     } else if (typeof adapter === 'string' && adapter.endsWith('.json')) {
-      const { JSONAdapter } = require('./storage/json_adapter');
-      this.adapter = new JSONAdapter(adapter);
+      if (process.env.ENV_TYPE === 'node') {
+        const { JSONAdapter } = require('./storage/json_adapter');
+        this.adapter = new JSONAdapter(adapter);
+      } else {
+        throw new Error('JSONAdapter is not supported in browser');
+      }
     } else {
       this.adapter = new NoopAdapter();
     }
@@ -45,7 +53,7 @@ export class Enforcer implements IEnforcer {
   }
 
   loadPolicy(): Promise<void> {
-    return this.adapter.loadPolicy(this.model);
+    return this.adapter.load(this.model);
   }
 
   getModel(): IModel {

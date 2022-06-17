@@ -1,4 +1,4 @@
-import { IAddRuleBool, IRemoveRuleBool } from '../api';
+import { IAddRawRuleBool, IAddRuleBool, IRemoveRuleBool } from '../api';
 import { DefHandler } from './handlers';
 
 export enum Sec {
@@ -10,7 +10,7 @@ export enum Sec {
 }
 
 /** @see {isModel} ts-auto-guard:type-guard */
-export interface IModel extends IAddRuleBool, IRemoveRuleBool {
+export interface IModel extends IAddRuleBool, IAddRawRuleBool, IRemoveRuleBool {
   on<E extends keyof IModelEvents>(event: E, listener: IModelEvents[E]): this;
 
   once<E extends keyof IModelEvents>(event: E, listener: IModelEvents[E]): this;

@@ -1,18 +1,36 @@
-export class ParameterDef<ParamType> {
+import { PType, ParamTypes } from './static/param_types';
+
+export class ParameterDef {
   key: string;
   params: string[];
+  paramTypes: PType[];
   paramIndex: Map<string, number>;
 
-  constructor(key: string, parameters: string) {
+  constructor(key: string, parameters: string, defaultType: string = 'String') {
     this.key = key;
-    this.params = parameters.split(',').map(p => p.trim());
+    this.params = [];
+    this.paramTypes = [];
     this.paramIndex = new Map();
-    for (let [i, param] of this.params.entries()) {
+
+    for (let [i, p] of parameters.split(',').entries()) {
+      let param = p.trim();
+      let type = defaultType;
+      let typeIndex = p.indexOf(':');
+      if (typeIndex >= 0) {
+        param = p.slice(0, typeIndex).trim();
+        type = p.slice(typeIndex + 1).trim();
+      }
+      let pType = ParamTypes.get(type);
+      if (pType === undefined) {
+        throw new Error(`${parameters}, unknown type ${type}`);
+      }
+      this.params.push(param);
+      this.paramTypes.push(pType);
       this.paramIndex.set(param, i);
     }
   }
 
-  get(args: ParamType[], name: string): ParamType {
+  get(args: any, name: string): any {
     let index = this.paramIndex.get(name);
     if (index === undefined) {
       throw new Error(`parameter '${name}' not found`);
@@ -31,11 +49,11 @@ export class ParameterDef<ParamType> {
     return this.paramIndex.has(name);
   }
 
-  getArray(args: ParamType[], names: string[]): ParamType[] {
+  getArray(args: any[], names: string[]): any[] {
     return names.map(name => this.get(args, name));
   }
 
-  toObject(args: ParamType[]): any {
+  toObject(args: any[]): any {
     let obj = args.reduce((acc, arg, i) => {
       acc[this.params[i]] = arg;
       return acc;
@@ -43,5 +61,23 @@ export class ParameterDef<ParamType> {
     return {
       [this.key]: obj,
     };
+  }
+
+  parse(rule: string[]): any[] {
+    return this.paramTypes.map((type, i) => {
+      return type.parse(rule[i]);
+    });
+  }
+
+  stringify(rule: any[]): string[] {
+    return this.paramTypes.map((type, i) => {
+      return type.stringify(rule[i]);
+    });
+  }
+
+  check(rule: any[]): void {
+    this.paramTypes.map((type, i) => {
+      return type.check(rule[i]);
+    });
   }
 }

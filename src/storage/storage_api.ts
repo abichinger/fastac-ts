@@ -1,9 +1,13 @@
-import { IAddRuleBool } from '../api';
+import { IAddRawRuleBool } from '../api';
+
+export interface LoadOptions {
+  filter: any;
+}
 
 /** @see {isStorageAdapter} ts-auto-guard:type-guard */
 export interface IStorageAdapter {
-  loadPolicy(model: IAddRuleBool): Promise<void>;
-  savePolicy(model: Iterable<string[]>): Promise<void>;
+  load(model: IAddRawRuleBool, options?: LoadOptions): Promise<void>;
+  clear(): Promise<void>;
 }
 
 export interface ISimpleAdapter extends IStorageAdapter {

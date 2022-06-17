@@ -121,9 +121,8 @@ describe('rangeMatches', () => {
     },
   ];
 
-  let rDef = new ParameterDef<any>('r', 'sub, obj, act');
-  let pDef = new ParameterDef<string>('p', 'sub, obj, act');
-  let p = new Policy();
+  let rDef = new ParameterDef('r', 'sub, obj, act', 'Any');
+  let p = new Policy('p', 'sub, obj, act');
   for (let rule of rules) {
     p.addRule(rule);
   }
@@ -135,7 +134,7 @@ describe('rangeMatches', () => {
   for (let t of tests) {
     test(t.name, () => {
       let exprRoot = buildIndex(t.matcher);
-      let m = new Matcher(rDef, pDef, p, exprRoot);
+      let m = new Matcher(rDef, p.parameters(), p, exprRoot);
 
       let res: string[][] = [];
       m.eachMatch(t.req, rule => {

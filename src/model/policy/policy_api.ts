@@ -1,5 +1,6 @@
 import { IAddRuleBool, IRemoveRuleBool, IClear } from '../../api';
 import { hash } from '../../util';
+import { ParameterDef } from '../def';
 
 export interface IPolicyEvents {
   rule_added: (rule: string[]) => void;
@@ -28,6 +29,8 @@ export interface IPolicy
     event: E,
     ...args: Parameters<IPolicyEvents[E]>
   ): boolean;
+
+  parameters(): ParameterDef;
 }
 
 export function getDistinct(p: IPolicy, columns: number[]): string[][] {

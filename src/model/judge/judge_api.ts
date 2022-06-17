@@ -12,7 +12,7 @@ export interface Judgement {
 }
 
 export interface IJudgeFactory {
-  getJudge(pDef: ParameterDef<string>): IJudge;
+  getJudge(pDef: ParameterDef): IJudge;
 }
 
 export interface IJudge {

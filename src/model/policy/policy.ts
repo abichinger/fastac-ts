@@ -1,16 +1,21 @@
 import { IPolicy } from './policy_api';
 import { EventEmitter } from 'events';
 import { hash } from '../../util';
+import { ParameterDef } from '../def';
 
 export class Policy extends EventEmitter implements IPolicy {
-  rules: Map<string, string[]>;
+  rules: Map<string, any[]>;
+  def: ParameterDef;
 
-  constructor() {
+  constructor(key: string, parameters: string) {
     super();
     this.rules = new Map();
+    this.def = new ParameterDef(key, parameters);
   }
 
-  addRule(rule: string[]): boolean {
+  addRule(rule: any[]): boolean {
+    this.def.check(rule);
+
     let key = hash(rule);
     if (this.rules.has(key)) {
       return false;
@@ -19,7 +24,7 @@ export class Policy extends EventEmitter implements IPolicy {
     this.emit('rule_added', rule);
     return true;
   }
-  removeRule(rule: string[]): boolean {
+  removeRule(rule: any[]): boolean {
     let key = hash(rule);
     if (!this.rules.has(key)) {
       return false;
@@ -32,7 +37,11 @@ export class Policy extends EventEmitter implements IPolicy {
     this.rules = new Map();
     this.emit('cleared');
   }
-  [Symbol.iterator](): Iterator<string[], any, undefined> {
+  [Symbol.iterator](): Iterator<any[], any, undefined> {
     return this.rules.values();
+  }
+
+  parameters(): ParameterDef {
+    return this.def;
   }
 }

@@ -1,7 +1,7 @@
-import { IAddRuleBool } from '../api';
+import { IAddRawRuleBool } from '../api';
 import { ISimpleAdapter } from './storage_api';
 import fs from 'fs';
-import { Policy } from '../model/policy';
+import { RuleSet } from './json_adapter';
 
 const sep = ',';
 
@@ -25,7 +25,7 @@ export class CSVAdapter implements ISimpleAdapter {
     this.path = path;
   }
 
-  async loadPolicy(model: IAddRuleBool): Promise<void> {
+  async load(model: IAddRawRuleBool): Promise<void> {
     let content = await fs.promises.readFile(this.path, 'utf-8');
     let lines = content.split('\n');
     for (let line of lines) {
@@ -33,8 +33,12 @@ export class CSVAdapter implements ISimpleAdapter {
       if (rule.length === 0) {
         continue;
       }
-      model.addRule(rule);
+      model.addRawRule(rule);
     }
+  }
+
+  async clear(): Promise<void> {
+    await this.savePolicy([[]]);
   }
 
   async savePolicy(rules: Iterable<string[]>): Promise<void> {
@@ -47,16 +51,16 @@ export class CSVAdapter implements ISimpleAdapter {
   }
 
   async addRule(rule: string[]): Promise<void> {
-    let rules = new Policy();
-    await this.loadPolicy(rules);
-    rules.addRule(rule);
+    let rules = new RuleSet();
+    await this.load(rules);
+    rules.addRawRule(rule);
     await this.savePolicy(rules);
   }
 
   async removeRule(rule: string[]): Promise<void> {
-    let rules = new Policy();
-    await this.loadPolicy(rules);
-    rules.removeRule(rule);
+    let rules = new RuleSet();
+    await this.load(rules);
+    rules.removeRawRule(rule);
     await this.savePolicy(rules);
   }
 }
