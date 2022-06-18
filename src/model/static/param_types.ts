@@ -68,7 +68,7 @@ class RegexParser implements PType {
   }
 }
 
-class EvaluableExpression {
+export class EvaluableExpression {
   expr: string;
   ast: Expression;
 
@@ -94,8 +94,8 @@ class ExpressionParser implements PType {
   parse(str: string): EvaluableExpression {
     return EvaluableExpression.fromString(str);
   }
-  stringify(obj: any): string {
-    return obj.toStirng();
+  stringify(obj: EvaluableExpression): string {
+    return obj.toString();
   }
   check(obj: any): void {
     let isExpr =
@@ -106,7 +106,7 @@ class ExpressionParser implements PType {
   }
 }
 
-class Path {
+export class Path {
   str: string;
   pattern: matchit.Route;
 

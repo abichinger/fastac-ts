@@ -64,20 +64,31 @@ export class ParameterDef {
   }
 
   parse(rule: string[]): any[] {
-    return this.paramTypes.map((type, i) => {
-      return type.parse(rule[i]);
+    let offset = rule.length - this.paramTypes.length;
+    let res = this.paramTypes.map((type, i) => {
+      return type.parse(rule[i + offset]);
     });
+    if (offset > 0) {
+      res.unshift(rule[0]);
+    }
+    return res;
   }
 
   stringify(rule: any[]): string[] {
-    return this.paramTypes.map((type, i) => {
-      return type.stringify(rule[i]);
+    let offset = rule.length - this.paramTypes.length;
+    let res = this.paramTypes.map((type, i) => {
+      return type.stringify(rule[i + offset]);
     });
+    if (offset > 0) {
+      res.unshift(rule[0]);
+    }
+    return res;
   }
 
   check(rule: any[]): void {
+    let offset = rule.length - this.paramTypes.length;
     this.paramTypes.map((type, i) => {
-      return type.check(rule[i]);
+      return type.check(rule[i + offset]);
     });
   }
 }

@@ -1,7 +1,7 @@
 const defaultSep = ',';
 
-export function hash(rule: string[]): string {
-  return rule.join(defaultSep);
+export function hash(values: any[]): string {
+  return values.join(defaultSep);
 }
 
 export function getBaseKey(key: string): string {

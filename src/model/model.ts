@@ -151,8 +151,7 @@ export class Model extends EventEmitter implements IModel {
       throw new Error(`policy '${pKey}' not found`);
     }
     let pDef = policy.parameters();
-    let parsed = pDef.parse(rule.slice(1));
-    parsed.unshift(pKey);
+    let parsed = pDef.parse(rule);
     return this.addRule(parsed);
   }
 
@@ -164,7 +163,7 @@ export class Model extends EventEmitter implements IModel {
     }
     let added = policy.addRule(rule.slice(1));
     if (added) {
-      this.emit('rule_added', rule);
+      this.emit('rule_added', { values: rule, def: policy.parameters() });
     }
     return added;
   }
@@ -176,7 +175,7 @@ export class Model extends EventEmitter implements IModel {
     }
     let deleted = policy.removeRule(rule.slice(1));
     if (deleted) {
-      this.emit('rule_deleted', rule);
+      this.emit('rule_deleted', { values: rule, def: policy.parameters() });
     }
     return deleted;
   }

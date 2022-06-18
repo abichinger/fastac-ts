@@ -1,5 +1,5 @@
 import { IAddRawRuleBool } from '../api';
-import { ISimpleAdapter } from './storage_api';
+import { IBatchAdapter } from './storage_api';
 import fs from 'fs';
 
 export class RuleSet implements IAddRawRuleBool, Iterable<string[]> {
@@ -34,7 +34,7 @@ export class RuleSet implements IAddRawRuleBool, Iterable<string[]> {
   }
 }
 
-export class JSONAdapter implements ISimpleAdapter {
+export class JSONAdapter implements IBatchAdapter {
   private path: string;
 
   constructor(path: string) {
@@ -42,6 +42,9 @@ export class JSONAdapter implements ISimpleAdapter {
   }
 
   async load(model: IAddRawRuleBool): Promise<void> {
+    if (!fs.existsSync(this.path)) {
+      return;
+    }
     let content = await fs.promises.readFile(this.path, 'utf-8');
     let rules = JSON.parse(content);
     for (let rule of rules) {
@@ -62,17 +65,21 @@ export class JSONAdapter implements ISimpleAdapter {
     await fs.promises.writeFile(this.path, content);
   }
 
-  async addRule(rule: string[]): Promise<void> {
-    let rules = new RuleSet();
-    await this.load(rules);
-    rules.addRawRule(rule);
-    await this.savePolicy(rules);
+  async addRules(rules: string[][]): Promise<void> {
+    let rs = new RuleSet();
+    await this.load(rs);
+    for (let rule of rules) {
+      rs.addRawRule(rule);
+    }
+    await this.savePolicy(rs);
   }
 
-  async removeRule(rule: string[]): Promise<void> {
-    let rules = new RuleSet();
-    await this.load(rules);
-    rules.removeRawRule(rule);
-    await this.savePolicy(rules);
+  async removeRules(rules: string[][]): Promise<void> {
+    let rs = new RuleSet();
+    await this.load(rs);
+    for (let rule of rules) {
+      rs.removeRawRule(rule);
+    }
+    await this.savePolicy(rs);
   }
 }

@@ -1,6 +1,6 @@
 import { hash } from '../../util';
 import { ParameterDef } from '../def';
-import { IPolicy } from '../policy/policy_api';
+import { IPolicy, Rule } from '../policy/policy_api';
 import { MatcherStage } from './def';
 import { IMatcher } from './matcher_api';
 import evaluate from 'static-eval';
@@ -66,7 +66,7 @@ export class Matcher implements IMatcher {
     this.clear();
 
     for (let rule of this.policy) {
-      this.addRule(rule);
+      this.addRuleHelper(rule, this.exprRoot, this.root);
     }
 
     this.policy.on('rule_added', this.addRule.bind(this));
@@ -88,8 +88,8 @@ export class Matcher implements IMatcher {
     this.enabled = false;
   }
 
-  private addRule(rule: any[]) {
-    this.addRuleHelper(rule, this.exprRoot, this.root);
+  private addRule(rule: Rule) {
+    this.addRuleHelper(rule.values, this.exprRoot, this.root);
   }
 
   private addRuleHelper(
@@ -117,8 +117,8 @@ export class Matcher implements IMatcher {
     }
   }
 
-  private removeRule(rule: any[]) {
-    this.removeRuleHelper(rule, this.exprRoot, this.root);
+  private removeRule(rule: Rule) {
+    this.removeRuleHelper(rule.values, this.exprRoot, this.root);
   }
 
   private removeRuleHelper(

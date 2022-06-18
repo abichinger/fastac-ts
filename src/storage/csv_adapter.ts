@@ -26,6 +26,9 @@ export class CSVAdapter implements ISimpleAdapter {
   }
 
   async load(model: IAddRawRuleBool): Promise<void> {
+    if (!fs.existsSync(this.path)) {
+      return;
+    }
     let content = await fs.promises.readFile(this.path, 'utf-8');
     let lines = content.split('\n');
     for (let line of lines) {

@@ -1,5 +1,6 @@
 import { IAddRawRuleBool, IAddRuleBool, IRemoveRuleBool } from '../api';
 import { DefHandler } from './handlers';
+import { Rule } from './policy/policy_api';
 
 export enum Sec {
   R = 'request_definition',
@@ -34,7 +35,7 @@ export interface IModel extends IAddRuleBool, IAddRawRuleBool, IRemoveRuleBool {
 }
 
 export interface IModelEvents {
-  rule_added: (rule: string[]) => void;
-  rule_deleted: (rule: string[]) => void;
+  rule_added: (rule: Rule) => void;
+  rule_deleted: (rule: Rule) => void;
   model_loaded: () => void;
 }

@@ -21,7 +21,7 @@ export class Policy extends EventEmitter implements IPolicy {
       return false;
     }
     this.rules.set(key, rule);
-    this.emit('rule_added', rule);
+    this.emit('rule_added', { values: rule, parameters: this.def });
     return true;
   }
   removeRule(rule: any[]): boolean {
@@ -30,7 +30,7 @@ export class Policy extends EventEmitter implements IPolicy {
       return false;
     }
     this.rules.delete(key);
-    this.emit('rule_deleted', rule);
+    this.emit('rule_deleted', { values: rule, parameters: this.def });
     return true;
   }
   clear(): void {

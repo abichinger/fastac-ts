@@ -52,8 +52,22 @@ export class Enforcer implements IEnforcer {
     //this.options = options;
   }
 
-  loadPolicy(): Promise<void> {
-    return this.adapter.load(this.model);
+  async loadPolicy() {
+    let enabled = this.sc.enabled();
+    if (enabled) {
+      this.sc.disable();
+    }
+    let p = this.adapter.load(this.model);
+    p.then(() => {
+      if (enabled) {
+        this.sc.enable();
+      }
+    });
+    return p;
+  }
+
+  async flush() {
+    return this.sc.flush();
   }
 
   getModel(): IModel {
@@ -64,11 +78,11 @@ export class Enforcer implements IEnforcer {
     throw new Error('Method not implemented.');
   }
 
-  addRule(rule: string[]): boolean {
+  addRule(rule: any[]): boolean {
     return this.model.addRule(rule);
   }
 
-  addRules(rules: string[][]): void {
+  addRules(rules: any[][]): void {
     let autosave = this.sc.autosave();
     if (autosave) {
       this.sc.setAutosave(false);
@@ -77,15 +91,16 @@ export class Enforcer implements IEnforcer {
       this.model.addRule(rule);
     }
     if (autosave) {
+      this.flush();
       this.sc.setAutosave(true);
     }
   }
 
-  removeRule(rule: string[]): boolean {
+  removeRule(rule: any[]): boolean {
     return this.model.removeRule(rule);
   }
 
-  removeRules(rules: string[][]): void {
+  removeRules(rules: any[][]): void {
     let autosave = this.sc.autosave();
     if (autosave) {
       this.sc.setAutosave(false);
@@ -94,6 +109,7 @@ export class Enforcer implements IEnforcer {
       this.model.removeRule(rule);
     }
     if (autosave) {
+      this.flush();
       this.sc.setAutosave(true);
     }
   }

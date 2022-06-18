@@ -1,4 +1,5 @@
 import { IModel } from '../model/model_api';
+import { Rule } from '../model/policy/policy_api';
 import {
   IBatchAdapter,
   isBatchAdapter,
@@ -22,11 +23,15 @@ interface Operation {
   rule: string[];
 }
 
-function runBatch(adapter: IBatchAdapter, opc: OpCode, rules: string[][]) {
+async function runBatch(
+  adapter: IBatchAdapter,
+  opc: OpCode,
+  rules: string[][]
+) {
   if (opc === OpCode.Add) {
-    adapter.addRules(rules);
+    await adapter.addRules(rules);
   } else if (opc === OpCode.Remove) {
-    adapter.removeRules(rules);
+    await adapter.removeRules(rules);
   }
 }
 
@@ -35,7 +40,7 @@ export class StorageController {
   private model: IModel;
   private adapter: IStorageAdapter;
   private q: Operation[] = [];
-  private wait: number = 1;
+  private pending: Promise<void> | undefined;
 
   constructor(
     model: IModel,
@@ -60,23 +65,25 @@ export class StorageController {
     this.options.autosave = autosave;
   }
 
-  private onRuleAdded(rule: string[]): void {
-    this.addOp(OpCode.Add, rule);
+  private onRuleAdded(rule: Rule): void {
+    this.addOp(OpCode.Add, rule.def.stringify(rule.values));
   }
 
-  private onRuleRemoved(rule: string[]): void {
-    this.addOp(OpCode.Remove, rule);
+  private onRuleRemoved(rule: Rule): void {
+    this.addOp(OpCode.Remove, rule.def.stringify(rule.values));
   }
 
   addOp(opc: OpCode, rule: string[]) {
     this.q.unshift({ opc, rule });
-    if (!this.options.autosave) {
-      return;
-    }
-    this.wait--;
-    if (this.wait <= 0) {
+    if (this.options.autosave) {
       this.flush();
     }
+  }
+
+  flush(): Promise<void> {
+    let p = this._flush();
+    this.pending = p;
+    return p;
   }
 
   enabled(): boolean {
@@ -88,8 +95,8 @@ export class StorageController {
       return;
     }
 
-    this.model.on('rule_added', this.onRuleAdded);
-    this.model.on('rule_deleted', this.onRuleRemoved);
+    this.model.on('rule_added', this.onRuleAdded.bind(this));
+    this.model.on('rule_deleted', this.onRuleRemoved.bind(this));
     this.options.storage = true;
   }
 
@@ -98,24 +105,24 @@ export class StorageController {
       return;
     }
 
-    this.model.off('rule_added', this.onRuleAdded);
-    this.model.off('rule_deleted', this.onRuleRemoved);
+    this.model.off('rule_added', this.onRuleAdded.bind(this));
+    this.model.off('rule_deleted', this.onRuleRemoved.bind(this));
     this.options.storage = false;
   }
 
-  private simpleFlush(adapter: ISimpleAdapter): void {
+  private async simpleFlush(adapter: ISimpleAdapter) {
     let op = this.q.pop();
     while (op !== undefined) {
       if (op.opc === OpCode.Add) {
-        adapter.addRule(op.rule);
+        await adapter.addRule(op.rule);
       } else if (op.opc === OpCode.Remove) {
-        adapter.removeRule(op.rule);
+        await adapter.removeRule(op.rule);
       }
       op = this.q.pop();
     }
   }
 
-  private batchFlush(adapter: IBatchAdapter): void {
+  private async batchFlush(adapter: IBatchAdapter) {
     let rules: string[][] = [];
 
     let op = this.q.pop();
@@ -127,9 +134,8 @@ export class StorageController {
     while (op !== undefined) {
       if (currentOpc === op.opc) {
         rules.push(op.rule);
-        continue;
       } else {
-        runBatch(adapter, currentOpc, rules);
+        await runBatch(adapter, currentOpc, rules);
         currentOpc = op.opc;
         rules = [op.rule];
       }
@@ -138,23 +144,22 @@ export class StorageController {
     }
 
     if (rules.length > 0) {
-      runBatch(adapter, currentOpc, rules);
+      await runBatch(adapter, currentOpc, rules);
     }
   }
 
-  flush(): void {
+  private async _flush() {
+    //wait until previous flush is finished
+    if (this.pending) {
+      await this.pending;
+    }
+
     if (isBatchAdapter(this.adapter)) {
-      this.batchFlush(this.adapter);
+      await this.batchFlush(this.adapter);
     } else if (isSimpleAdapter(this.adapter)) {
-      this.simpleFlush(this.adapter);
+      await this.simpleFlush(this.adapter);
     } else {
       throw new Error('invalid adapter');
     }
-
-    this.wait = 0;
-  }
-
-  addWait(i: number): void {
-    this.wait += i;
   }
 }
