@@ -2,6 +2,7 @@ import { Enforcer } from '../src';
 import fs from 'fs';
 import { UcastSetup } from '../examples/abac_ucast';
 import { EvaluableExpression } from '../src/model/static/param_types';
+import { IMatcher } from '../src/model/matcher/matcher_api';
 
 export interface TestLifecycle {
   before(): void;
@@ -107,6 +108,60 @@ describe('test models', () => {
       let enforcer = await getEnforcer(model, policy);
       expect(enforcer.enforce({ req: req })).toEqual(expected);
     });
+  });
+});
+
+describe('test filter', () => {
+  const tests: {
+    model: string;
+    policy: string;
+    req?: any[];
+    matcher?: IMatcher | string;
+    expected: any[][];
+  }[] = [
+    {
+      model: 'examples/acl_model.conf',
+      policy: 'examples/acl_policy.csv',
+      matcher: "p.sub == 'alice'",
+      expected: [
+        ['p', 'alice', 'data1', 'read'],
+        ['p', 'alice', 'data1', 'write'],
+        ['p', 'alice', 'data2', 'read'],
+      ],
+    },
+    {
+      model: 'examples/rbac_model.conf',
+      policy: 'examples/rbac_policy.csv',
+      matcher: 'g.role == "user"',
+      expected: [
+        ['g', 'alice', 'user'],
+        ['g', 'bob', 'user'],
+      ],
+    },
+    {
+      model: 'examples/abac_eval_model.conf',
+      policy: 'examples/abac_eval_policy.json',
+      matcher: 'p.rule.eval({sub:r.sub})',
+      req: [{ age: 20 }],
+      expected: [
+        ['p', 'sub.age > 18', 'data1', 'read'],
+        ['p', 'sub.age > 12', 'data2', 'read'],
+      ],
+    },
+  ];
+
+  test.each(tests)('%s', async t => {
+    let e = new Enforcer(t.model, t.policy);
+    await e.loadPolicy();
+    let config = {
+      ...(t.matcher && { matcher: t.matcher }),
+      ...(t.req && { req: t.req }),
+    };
+    let actual = e.filter(config);
+    actual = actual.map(rule => {
+      return rule.map(v => v + '');
+    });
+    expect(actual).toEqual(t.expected);
   });
 });
 

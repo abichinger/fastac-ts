@@ -35,7 +35,7 @@ export interface IPolicy
     ...args: Parameters<IPolicyEvents[E]>
   ): boolean;
 
-  parameters(): ParameterDef;
+  def(): ParameterDef;
 }
 
 export function getDistinct(p: IPolicy, columns: number[]): any[][] {

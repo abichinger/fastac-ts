@@ -8,12 +8,12 @@ export interface IEnforcer {
   getModel(): IModel;
   setModel(model: IModel): void;
 
-  addRule(rule: string[]): boolean;
-  addRules(rules: string[][]): void;
-  removeRule(rule: string[]): boolean;
-  removeRules(rules: string[][]): void;
+  addRule(rule: any[]): boolean;
+  addRules(rules: any[][]): void;
+  removeRule(rule: any[]): boolean;
+  removeRules(rules: any[][]): void;
 
   enforce(config: EnforceConfig): boolean;
-  filter(config: BaseConfig): string[][];
-  eachMatch(config: BaseConfig, cb: (rule: string[]) => boolean): void;
+  filter(config: BaseConfig): any[][];
+  eachMatch(config: BaseConfig, cb: (rule: any[]) => boolean): void;
 }

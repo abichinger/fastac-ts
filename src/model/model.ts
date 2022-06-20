@@ -2,21 +2,20 @@ import { IModel, Sec } from './model_api';
 import { EventEmitter } from 'events';
 import { getBaseKey, getProperty } from '../util';
 import {
-  DefHandler,
-  GenericHandler,
-  JudgeHandler,
-  MatcherHandler,
-  PolicyHandler,
-  RoleManagerHandler,
-} from './handlers';
+  ModelExtension,
+  extensions,
+  ExtensionEntry,
+  RetType,
+} from './model_ext';
 
 import ini from 'ini';
 import { IPolicy } from './policy/policy_api';
+import { ParameterDef } from './def';
 
 class Section {
   name: string;
   defs: Map<string, string>;
-  handlers: Map<string, DefHandler<any>>;
+  handlers: Map<string, ModelExtension<any>>;
 
   constructor(name: string) {
     this.name = name;
@@ -24,7 +23,10 @@ class Section {
     this.handlers = new Map();
   }
 
-  register(baseKey: string, handler: DefHandler<any>): void {
+  register(baseKey: string, handler: ModelExtension<any>): void {
+    if (this.handlers.has(baseKey)) {
+      throw new Error(`base key ${baseKey} already in use`);
+    }
     this.handlers.set(baseKey, handler);
   }
 
@@ -32,7 +34,7 @@ class Section {
     let baseKey = getBaseKey(key);
     let handler = this.handlers.get(baseKey);
     if (handler === undefined) {
-      throw new Error(`no def handler found for '${key}'`);
+      throw new Error(`no model extension found for '${baseKey}'`);
     }
     let property = getProperty(key);
     if (property === undefined) {
@@ -48,7 +50,7 @@ class Section {
     let baseKey = getBaseKey(key);
     let handler = this.handlers.get(baseKey);
     if (handler === undefined) {
-      throw new Error(`no def handler found for '${key}'`);
+      throw new Error(`no model extension found for '${baseKey}'`);
     }
     handler.remove(model, key);
     this.defs.delete(key);
@@ -60,15 +62,16 @@ class Section {
     if (handler === undefined) {
       return undefined;
     }
-    return (handler as DefHandler<T>).get(key);
+    return (handler as ModelExtension<T>).get(key);
   }
 
-  entries<T>(baseKey: string): IterableIterator<[string, T]> {
-    let handler = this.handlers.get(baseKey);
-    if (handler === undefined) {
-      return [].values();
+  entries<T>(): IterableIterator<[string, T]> {
+    let res: [string, T][] = [];
+    for (let handler of this.handlers.values()) {
+      let instances = Array.from((handler as ModelExtension<T>).entries());
+      res.push(...instances);
     }
-    return (handler as DefHandler<T>).entries();
+    return res.values();
   }
 
   getDef(key: string): string | undefined {
@@ -78,41 +81,49 @@ class Section {
 
 export class Model extends EventEmitter implements IModel {
   private secMap: Map<string, Section>;
+  private typeMap: Map<RetType, Section>;
 
   constructor() {
     super();
     this.secMap = new Map();
+    this.typeMap = new Map();
 
-    this.registerDef(Sec.R, 'r', new GenericHandler());
-    this.registerDef(Sec.P, 'p', new PolicyHandler());
-    this.registerDef(Sec.G, 'g', new RoleManagerHandler());
-    this.registerDef(Sec.J, 'j', new JudgeHandler());
-    this.registerDef(Sec.M, 'm', new MatcherHandler());
-  }
-
-  registerDef(sec: string, keyPrefix: string, handler: DefHandler<any>): void {
-    let section = this.secMap.get(sec);
-    if (section === undefined) {
-      section = new Section(sec);
-      this.secMap.set(sec, section);
+    for (let entry of extensions) {
+      this.registerExt(entry);
     }
-    section.register(keyPrefix, handler);
   }
 
-  get<T>(sec: string, key: string): T | undefined {
-    let section = this.secMap.get(sec);
+  registerExt(ext: ExtensionEntry): void {
+    let section = this.secMap.get(ext.sec);
     if (section === undefined) {
-      throw new Error(`section "${sec}" not found`);
+      section = new Section(ext.sec);
+      this.secMap.set(ext.sec, section);
+    }
+    let handler = new ext.ext();
+    section.register(ext.key, handler);
+
+    let typeSec = this.typeMap.get(handler.type());
+    if (typeSec === undefined) {
+      typeSec = new Section(handler.type());
+      this.typeMap.set(handler.type(), typeSec);
+    }
+    typeSec.register(ext.key, handler);
+  }
+
+  get<T>(type: RetType, key: string): T | undefined {
+    let section = this.typeMap.get(type);
+    if (section === undefined) {
+      return undefined;
     }
     return section.get<T>(key);
   }
 
-  entries<T>(sec: string, baseKey: string): IterableIterator<[string, T]> {
-    let section = this.secMap.get(sec);
+  entries<T>(type: RetType): IterableIterator<[string, T]> {
+    let section = this.typeMap.get(type);
     if (section === undefined) {
-      throw new Error(`section "${sec}" not found`);
+      return [].values();
     }
-    return section.entries<T>(baseKey);
+    return section.entries<T>();
   }
 
   setDef(sec: string, key: string, value: string): void {
@@ -139,9 +150,12 @@ export class Model extends EventEmitter implements IModel {
     section.remove(this, key);
   }
 
+  getRequestDef(rKey: string): ParameterDef | undefined {
+    return this.get<ParameterDef>(RetType.Param, rKey);
+  }
+
   getPolicy(pKey: string): IPolicy | undefined {
-    let policy = this.get<IPolicy>(Sec.P, pKey);
-    return policy ? policy : this.get<IPolicy>(Sec.G, pKey);
+    return this.get<IPolicy>(RetType.Policy, pKey);
   }
 
   addRawRule(rule: string[]) {
@@ -150,7 +164,7 @@ export class Model extends EventEmitter implements IModel {
     if (policy === undefined) {
       throw new Error(`policy '${pKey}' not found`);
     }
-    let pDef = policy.parameters();
+    let pDef = policy.def();
     let parsed = pDef.parse(rule);
     return this.addRule(parsed);
   }
@@ -163,7 +177,7 @@ export class Model extends EventEmitter implements IModel {
     }
     let added = policy.addRule(rule.slice(1));
     if (added) {
-      this.emit('rule_added', { values: rule, def: policy.parameters() });
+      this.emit('rule_added', { values: rule, def: policy.def() });
     }
     return added;
   }
@@ -175,7 +189,7 @@ export class Model extends EventEmitter implements IModel {
     }
     let deleted = policy.removeRule(rule.slice(1));
     if (deleted) {
-      this.emit('rule_deleted', { values: rule, def: policy.parameters() });
+      this.emit('rule_deleted', { values: rule, def: policy.def() });
     }
     return deleted;
   }
@@ -216,14 +230,9 @@ export class Model extends EventEmitter implements IModel {
     return model;
   }
 
-  eachRule(fn: (rule: string[]) => boolean): void {
-    let policies = this.entries<IPolicy>(Sec.P, 'p');
-    let rolePolicies = this.entries<IPolicy>(Sec.G, 'g');
-    let policyMap = new Map([
-      ...Array.from(policies),
-      ...Array.from(rolePolicies),
-    ]);
-    for (let [key, policy] of policyMap.entries()) {
+  eachRule(fn: (rule: any[]) => boolean): void {
+    let policies = this.entries<IPolicy>(RetType.Policy);
+    for (let [key, policy] of policies) {
       for (let rule of policy) {
         let cont = fn([key, ...rule]);
         if (!cont) {

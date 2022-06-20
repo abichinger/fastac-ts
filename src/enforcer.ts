@@ -117,7 +117,7 @@ export class Enforcer implements IEnforcer {
   enforce(config: EnforceConfig): boolean {
     let { req = [], matcher = 'm', judge = 'j' } = config;
     let m = getMatcher(this.model, matcher);
-    let j = getJudgeF(this.model, judge).getJudge(m.getPolicyDef());
+    let j = getJudgeF(this.model, judge).getJudge(m.getPolicy().def());
     let res: Judgement = {
       effect: Effect.Indeterminate,
     };
@@ -133,11 +133,27 @@ export class Enforcer implements IEnforcer {
     return res.effect === Effect.Allow;
   }
 
-  filter(_config: BaseConfig): string[][] {
-    throw new Error('Method not implemented.');
+  filter(config: BaseConfig): any[][] {
+    let { req = [], matcher = 'm' } = config;
+    let m = getMatcher(this.model, matcher);
+    let policy = m.getPolicy();
+    if (policy === undefined) {
+      return [];
+    }
+
+    let pKey = policy.def().key;
+    let rules: any[][] = [];
+    m.eachMatch(req, rule => {
+      let r = Array.from(rule);
+      r.unshift(pKey);
+      rules.push(r);
+      return true;
+    });
+
+    return rules;
   }
 
-  eachMatch(_config: BaseConfig, _cb: (rule: string[]) => boolean): void {
+  eachMatch(_config: BaseConfig, _cb: (rule: any[]) => boolean): void {
     throw new Error('Method not implemented.');
   }
 }

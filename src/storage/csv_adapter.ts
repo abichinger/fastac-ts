@@ -1,5 +1,5 @@
 import { IAddRawRuleBool } from '../api';
-import { ISimpleAdapter } from './storage_api';
+import { IBatchAdapter } from './storage_api';
 import fs from 'fs';
 import { RuleSet } from './json_adapter';
 
@@ -18,7 +18,7 @@ function lineToRule(line: string): string[] {
   return line.split(sep).map(a => a.trim());
 }
 
-export class CSVAdapter implements ISimpleAdapter {
+export class CSVAdapter implements IBatchAdapter {
   private path: string;
 
   constructor(path: string) {
@@ -53,17 +53,21 @@ export class CSVAdapter implements ISimpleAdapter {
     await fs.promises.writeFile(this.path, content);
   }
 
-  async addRule(rule: string[]): Promise<void> {
-    let rules = new RuleSet();
-    await this.load(rules);
-    rules.addRawRule(rule);
-    await this.savePolicy(rules);
+  async addRules(rules: string[][]): Promise<void> {
+    let rs = new RuleSet();
+    await this.load(rs);
+    for (let rule of rules) {
+      rs.addRawRule(rule);
+    }
+    await this.savePolicy(rs);
   }
 
-  async removeRule(rule: string[]): Promise<void> {
-    let rules = new RuleSet();
-    await this.load(rules);
-    rules.removeRawRule(rule);
-    await this.savePolicy(rules);
+  async removeRules(rules: string[][]): Promise<void> {
+    let rs = new RuleSet();
+    await this.load(rs);
+    for (let rule of rules) {
+      rs.removeRawRule(rule);
+    }
+    await this.savePolicy(rs);
   }
 }

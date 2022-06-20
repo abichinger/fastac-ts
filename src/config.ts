@@ -1,7 +1,7 @@
-import { JudgeHandler, MatcherHandler } from './model/handlers';
+import { JudgeHandler, MatcherHandler, RetType } from './model/model_ext';
 import { IJudgeFactory } from './model/judge/judge_api';
 import { IMatcher } from './model/matcher/matcher_api';
-import { IModel, Sec } from './model/model_api';
+import { IModel } from './model/model_api';
 
 export interface BaseConfig {
   req?: any[];
@@ -17,7 +17,7 @@ export function getMatcher(
   matcher: string | IMatcher
 ): IMatcher {
   if (typeof matcher === 'string') {
-    let mat = model.get<IMatcher>(Sec.M, matcher);
+    let mat = model.get<IMatcher>(RetType.Matcher, matcher);
     if (mat !== undefined) {
       return mat;
     }
@@ -32,7 +32,7 @@ export function getJudgeF(
   judge: string | IJudgeFactory
 ): IJudgeFactory {
   if (typeof judge === 'string') {
-    let judgeF = model.get<IJudgeFactory>(Sec.J, judge);
+    let judgeF = model.get<IJudgeFactory>(RetType.Judge, judge);
     if (judgeF !== undefined) {
       return judgeF;
     }

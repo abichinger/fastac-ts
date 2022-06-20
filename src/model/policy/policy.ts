@@ -5,16 +5,16 @@ import { ParameterDef } from '../def';
 
 export class Policy extends EventEmitter implements IPolicy {
   rules: Map<string, any[]>;
-  def: ParameterDef;
+  pDef: ParameterDef;
 
   constructor(key: string, parameters: string) {
     super();
     this.rules = new Map();
-    this.def = new ParameterDef(key, parameters);
+    this.pDef = new ParameterDef(key, parameters);
   }
 
   addRule(rule: any[]): boolean {
-    this.def.check(rule);
+    this.pDef.check(rule);
 
     let key = hash(rule);
     if (this.rules.has(key)) {
@@ -41,7 +41,7 @@ export class Policy extends EventEmitter implements IPolicy {
     return this.rules.values();
   }
 
-  parameters(): ParameterDef {
-    return this.def;
+  def(): ParameterDef {
+    return this.pDef;
   }
 }

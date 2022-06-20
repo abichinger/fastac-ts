@@ -1,5 +1,5 @@
 import { IAddRawRuleBool, IAddRuleBool, IRemoveRuleBool } from '../api';
-import { DefHandler } from './handlers';
+import { ExtensionEntry, RetType } from './model_ext';
 import { Rule } from './policy/policy_api';
 
 export enum Sec {
@@ -23,12 +23,12 @@ export interface IModel extends IAddRuleBool, IAddRawRuleBool, IRemoveRuleBool {
     ...args: Parameters<IModelEvents[E]>
   ): boolean;
 
-  registerDef(sec: string, keyPrefix: string, handler: DefHandler<any>): void;
+  registerExt(ext: ExtensionEntry): void;
   getDef(sec: string, key: string): string | undefined;
   setDef(sec: string, key: string, value: string): void;
   removeDef(sec: string, key: string): void;
 
-  get<T>(sec: string, key: string): T | undefined;
+  get<T>(type: RetType, key: string): T | undefined;
 
   eachRule(fn: (rule: string[]) => boolean): void;
   toString(): string;

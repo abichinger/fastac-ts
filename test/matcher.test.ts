@@ -134,7 +134,7 @@ describe('rangeMatches', () => {
   for (let t of tests) {
     test(t.name, () => {
       let exprRoot = buildIndex(t.matcher);
-      let m = new Matcher(rDef, p.parameters(), p, exprRoot);
+      let m = new Matcher(rDef, p, exprRoot);
 
       let res: string[][] = [];
       m.eachMatch(t.req, rule => {

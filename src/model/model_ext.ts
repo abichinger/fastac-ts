@@ -4,11 +4,21 @@ import { RoleManager } from '../rbac/role_manager';
 import { RolePolicy } from '../rbac/role_policy';
 import { ParameterDef } from './def';
 import { JudgeFactory } from './judge';
+import { IJudgeFactory } from './judge/judge_api';
 import { buildIndex, Matcher, policyKey, reqKey } from './matcher';
+import { IMatcher } from './matcher/matcher_api';
 import { IModel, Sec } from './model_api';
 import { Policy } from './policy/policy';
 import { IPolicy } from './policy/policy_api';
 import { getPatternMatcher, removeFunction, setFunction } from './static';
+
+export enum RetType {
+  Param = 'param',
+  Policy = 'policy',
+  Matcher = 'Matcher',
+  Judge = 'judge',
+  Undefined = '',
+}
 
 export interface CreateProps {
   m: IModel;
@@ -22,7 +32,16 @@ export interface DestroyProps<T> {
   instance: T | undefined;
 }
 
-export abstract class DefHandler<T> {
+export interface IModelExtension {
+  new ():
+    | ModelExtension<ParameterDef>
+    | ModelExtension<IPolicy>
+    | ModelExtension<IMatcher>
+    | ModelExtension<IJudgeFactory>
+    | ModelExtension<undefined>;
+}
+
+export abstract class ModelExtension<T> {
   private propHandlers: Map<string, (instance: T, value: string) => void>;
   instances: Map<string, T>;
 
@@ -45,6 +64,7 @@ export abstract class DefHandler<T> {
 
   abstract create(props: CreateProps): T;
   abstract destroy(props: DestroyProps<T>): void;
+  abstract type(): RetType;
 
   prop(key: string, name: string, value: string) {
     let propHandler = this.propHandlers.get(name);
@@ -75,54 +95,36 @@ export abstract class DefHandler<T> {
   }
 }
 
-function getRequestDef(m: IModel, key?: string): ParameterDef {
-  if (key === undefined) {
-    return new ParameterDef('', '', 'Any');
-  }
-  let args = m.getDef(Sec.R, key);
-  if (args === undefined) {
-    throw new Error(`request definition '${key}' not found`);
-  }
-  return new ParameterDef(key, args, 'Any');
-}
-
-function getPolicyDef(m: IModel, key?: string): ParameterDef {
-  if (key === undefined) {
-    return new ParameterDef('', '');
-  }
-  let args = m.getDef(Sec.P, key);
-  if (args === undefined) {
-    throw new Error(`policy definition '${key}' not found`);
-  }
-  return new ParameterDef(key, args);
-}
-
-export class PolicyHandler extends DefHandler<Policy> {
-  create({ key, value }: CreateProps): Policy {
+export class PolicyHandler extends ModelExtension<IPolicy> {
+  create({ key, value }: CreateProps): IPolicy {
     return new Policy(key, value);
   }
   destroy(): void {}
+  type(): RetType {
+    return RetType.Policy;
+  }
 }
 
-export class MatcherHandler extends DefHandler<Matcher> {
-  create({ m, value: expr }: CreateProps): Matcher {
+export class MatcherHandler extends ModelExtension<IMatcher> {
+  create({ m, value: expr }: CreateProps): IMatcher {
     let exprRoot = buildIndex(expr);
     let pKey = policyKey(expr);
     let rKey = reqKey(expr);
 
-    let rDef = getRequestDef(m, rKey);
-    let pDef = getPolicyDef(m, pKey);
+    let rDef = rKey ? m.get<ParameterDef>(RetType.Param, rKey) : undefined;
 
-    let policy: IPolicy | undefined = undefined;
+    let policy: IPolicy;
     if (pKey) {
-      policy = m.get<IPolicy>(Sec.P, pKey);
-      policy = policy ? policy : m.get<IPolicy>(Sec.G, pKey);
-      if (policy === undefined) {
+      let p = m.get<IPolicy>(RetType.Policy, pKey);
+      if (p === undefined) {
         throw new Error(`policy '${pKey}' not found`);
       }
+      policy = p;
+    } else {
+      policy = new Policy('', '');
     }
 
-    return new Matcher(rDef, pDef, policy, exprRoot);
+    return new Matcher(rDef, policy, exprRoot);
   }
   destroy({ instance: matcher }: DestroyProps<Matcher>): void {
     if (matcher === undefined) {
@@ -130,9 +132,12 @@ export class MatcherHandler extends DefHandler<Matcher> {
     }
     matcher.disable();
   }
+  type(): RetType {
+    return RetType.Matcher;
+  }
 }
 
-export class RoleManagerHandler extends DefHandler<RolePolicy> {
+export class RoleManagerHandler extends ModelExtension<IPolicy> {
   constructor() {
     super();
     this.registerProp('roleMatcher', (rolePolicy, value) => {
@@ -142,7 +147,9 @@ export class RoleManagerHandler extends DefHandler<RolePolicy> {
           `PatternMatcher '${value}' not found, use setPatternMatcher to register a new matcher`
         );
       }
-      (rolePolicy.rm as IDefaultRoleManager).setRoleMatcher(matcher);
+      ((rolePolicy as RolePolicy).rm as IDefaultRoleManager).setRoleMatcher(
+        matcher
+      );
     });
     this.registerProp('domainMatcher', (rolePolicy, value) => {
       let matcher = getPatternMatcher(value);
@@ -151,11 +158,13 @@ export class RoleManagerHandler extends DefHandler<RolePolicy> {
           `PatternMatcher '${value}' not found, use setPatternMatcher to register a new matcher`
         );
       }
-      (rolePolicy.rm as IDefaultRoleManager).setDomainMatcher(matcher);
+      ((rolePolicy as RolePolicy).rm as IDefaultRoleManager).setDomainMatcher(
+        matcher
+      );
     });
   }
 
-  create({ key, value }: CreateProps): RolePolicy {
+  create({ key, value }: CreateProps): IPolicy {
     let def = new ParameterDef(key, value);
     if (def.params.length <= 1) {
       throw new Error(`expected at least 2 parameters (${key} = ${value})`);
@@ -167,25 +176,59 @@ export class RoleManagerHandler extends DefHandler<RolePolicy> {
       rm = new DomainManager(10);
     }
 
-    setFunction(key, rm.hasLink.bind(rm));
+    setFunction(key + 'HasLink', rm.hasLink.bind(rm));
     return new RolePolicy(rm, key, value);
   }
 
-  destroy({ key }: DestroyProps<RolePolicy>): void {
+  destroy({ key }: DestroyProps<IPolicy>): void {
     removeFunction(key);
+  }
+
+  type(): RetType {
+    return RetType.Policy;
   }
 }
 
-export class JudgeHandler extends DefHandler<JudgeFactory> {
-  create({ value }: CreateProps): JudgeFactory {
+export class JudgeHandler extends ModelExtension<IJudgeFactory> {
+  create({ value }: CreateProps): IJudgeFactory {
     return new JudgeFactory(value);
   }
   destroy(): void {}
+  type(): RetType {
+    return RetType.Judge;
+  }
 }
 
-export class GenericHandler extends DefHandler<undefined> {
-  create(): undefined {
-    return;
+export class ParameterHandler extends ModelExtension<ParameterDef> {
+  create({ key, value }: CreateProps): ParameterDef {
+    return new ParameterDef(key, value);
   }
   destroy(): void {}
+  type(): RetType {
+    return RetType.Param;
+  }
 }
+
+export interface ExtensionEntry {
+  sec: string;
+  key: string;
+  ext: IModelExtension;
+}
+
+let extensions: ExtensionEntry[] = [];
+
+export function registerModelExtension(
+  sec: string,
+  key: string,
+  ext: IModelExtension
+) {
+  extensions.push({ sec, key, ext });
+}
+
+registerModelExtension(Sec.R, 'r', ParameterHandler);
+registerModelExtension(Sec.P, 'p', PolicyHandler);
+registerModelExtension(Sec.G, 'g', RoleManagerHandler);
+registerModelExtension(Sec.J, 'j', JudgeHandler);
+registerModelExtension(Sec.M, 'm', MatcherHandler);
+
+export { extensions };

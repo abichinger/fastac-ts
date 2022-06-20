@@ -30,28 +30,27 @@ class MatcherNode {
 
 export class Matcher implements IMatcher {
   exprRoot: MatcherStage;
-  policy?: IPolicy;
+  policy: IPolicy;
   pDef: ParameterDef;
   rDef: ParameterDef;
   root: MatcherNode = new MatcherNode([]);
   enabled: boolean = false;
 
   constructor(
-    rDef: ParameterDef,
-    pDef: ParameterDef,
-    policy: IPolicy | undefined,
+    rDef: ParameterDef | undefined,
+    policy: IPolicy,
     exprRoot: MatcherStage
   ) {
     this.exprRoot = exprRoot;
     this.policy = policy;
-    this.rDef = rDef;
-    this.pDef = pDef;
+    this.rDef = rDef !== undefined ? rDef : new ParameterDef('', '', 'Any');
+    this.pDef = policy.def();
 
     this.enable();
   }
 
-  getPolicyDef(): ParameterDef {
-    return this.pDef;
+  getPolicy(): IPolicy {
+    return this.policy;
   }
 
   clear() {
@@ -212,7 +211,7 @@ export class Matcher implements IMatcher {
    * @param vars request values and functions from FunctionMap
    * @param fn callback function
    */
-  eachMatch(req: any[], fn: (rule: string[]) => boolean): void {
+  eachMatch(req: any[], fn: (rule: any[]) => boolean): void {
     let vars = this.rDef.toObject(req);
     Object.assign(vars, getFunctions());
     this.eachMatchHelper(this.exprRoot, this.root, vars, fn);
